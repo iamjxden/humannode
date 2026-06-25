@@ -1,0 +1,50 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24'
+          channel: 'stable'
+
+      - run: flutter pub get
+      - run: flutter build apk --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HumanNode-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v1.0.0
+          name: HumanNode v1.0.0
+          body: |
+            ## HumanNode v1.0.0
+            
+            Local-first mobile AI workspace. Run LLMs directly on your device.
+            
+            ### Download
+            - `app-release.apk` — Android APK (attached below)
+            
+            ### Features
+            - On-device GGUF model inference via llama.cpp
+            - Agentic mode with 11 builtin tools
+            - Streaming responses
+            - Conversation management
+            - Notes
+            - Light/dark themes
+            - 5 language localizations
+          files: build/app/outputs/flutter-apk/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
