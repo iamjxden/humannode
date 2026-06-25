@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/di/service_locator.dart';
+import 'package:humannode/core/di/service_locator.dart';
 
 class ToolsState {
   final Set<String> disabledTools;
@@ -10,6 +10,8 @@ class ToolsState {
   ToolsState copyWith({Set<String>? disabledTools, Map<String, int>? callCounts}) =>
       ToolsState(disabledTools: disabledTools ?? this.disabledTools,
           callCounts: callCounts ?? this.callCounts);
+
+  bool isEnabled(String name) => !disabledTools.contains(name);
 }
 
 class ToolsNotifier extends StateNotifier<ToolsState> {
@@ -27,8 +29,7 @@ class ToolsNotifier extends StateNotifier<ToolsState> {
     state = state.copyWith(disabledTools: updated);
   }
 
-  bool get isEnabled => String name) => !state.disabledTools.contains(name);
-bool checkEnabled(String name) => !disabledTools.contains(name);
+  bool isEnabled(String name) => !state.disabledTools.contains(name);
   bool isDisabled(String name) => state.disabledTools.contains(name);
 }
 

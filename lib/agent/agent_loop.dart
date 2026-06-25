@@ -185,7 +185,7 @@ class AgentLoop {
     } on Exception catch (e) {
       HumanNodeLogger.error('Inference failed in agent loop', e);
       if (!_outputController.isClosed) {
-        _outputController.add('\n[Inference error: ${e.message}]');
+        _outputController.add('\n[Inference error: ${e.toString()}]');
       }
       return null;
     } catch (e) {
