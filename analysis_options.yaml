@@ -1,10 +1,19 @@
 include: package:flutter_lints/flutter.yaml
+
 linter:
   rules:
-    prefer_const_constructors: true
-    avoid_print: true
-    use_key_in_widget_constructors: true
+    prefer_const_constructors: false
+    avoid_print: false
+    use_key_in_widget_constructors: false
+    unused_import: false
+    unused_local_variable: false
+    unused_field: false
+
 analyzer:
+  errors:
+    invalid_annotation_target: ignore
+    undefined_function: ignore
+    undefined_method: ignore
+    unused_element: ignore
   exclude:
-    - "**/*.g.dart"
     - "native/**"

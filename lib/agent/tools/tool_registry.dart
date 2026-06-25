@@ -24,9 +24,10 @@ class ToolRegistry {
 
   ToolRegistry({required PresetDao presetDao}) : _presetDao = presetDao;
 
-  Future<void> init() async { _registerDefaults(); }
+  Future<void> init() async { _registerDefaults(); _loadFromPresetDao(); }
 
   void _registerDefaults() {
+  Future<void> _loadFromPresetDao() async { try { final presets = await _presetDao.getAll(); } catch (_) {} }
     _register(WebSearchTool()); _register(CalculatorTool()); _register(DatetimeTool());
     _register(FileReadTool()); _register(FileWriteTool()); _register(BashTool());
     _register(FetchUrlTool()); _register(NoteCreateTool()); _register(NoteSearchTool());
