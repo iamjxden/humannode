@@ -33,13 +33,12 @@ class HumanNodeTheme {
           fontWeight: FontWeight.w600,
         ),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
         color: surfaceLight,
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -76,7 +75,6 @@ class HumanNodeTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
-        margin: const EdgeInsets.all(16),
       ),
       dialogTheme: DialogTheme(
         shape: RoundedRectangleBorder(
@@ -110,13 +108,12 @@ class HumanNodeTheme {
           fontWeight: FontWeight.w600,
         ),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
         color: surfaceDark,
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -153,7 +150,6 @@ class HumanNodeTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
-        margin: const EdgeInsets.all(16),
       ),
       dialogTheme: DialogTheme(
         shape: RoundedRectangleBorder(

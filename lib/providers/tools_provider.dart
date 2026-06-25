@@ -27,7 +27,8 @@ class ToolsNotifier extends StateNotifier<ToolsState> {
     state = state.copyWith(disabledTools: updated);
   }
 
-  bool isEnabled(String name) => !state.disabledTools.contains(name);
+  bool get isEnabled => String name) => !state.disabledTools.contains(name);
+bool checkEnabled(String name) => !disabledTools.contains(name);
   bool isDisabled(String name) => state.disabledTools.contains(name);
 }
 

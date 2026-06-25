@@ -182,7 +182,7 @@ class AgentLoop {
         buffer.write(chunk);
         if (!_outputController.isClosed) _outputController.add(chunk);
       }
-    } on InferenceException catch (e) {
+    } on Exception catch (e) {
       HumanNodeLogger.error('Inference failed in agent loop', e);
       if (!_outputController.isClosed) {
         _outputController.add('\n[Inference error: ${e.message}]');

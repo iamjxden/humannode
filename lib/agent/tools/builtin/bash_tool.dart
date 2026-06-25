@@ -39,7 +39,7 @@ class BashTool extends Tool {
       if (buffer.isEmpty) buffer.write('(no output)');
       buffer.write('\n[exit: ${result.exitCode}]');
       return buffer.toString();
-    } on TimeoutException {
+    } on Exception {
       return 'Command timed out after $timeoutSeconds seconds';
     } catch (e) {
       return 'Command execution failed: $e';

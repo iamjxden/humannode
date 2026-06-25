@@ -1,5 +1,5 @@
 import 'mcp_client.dart';
-import '../../core/logger/humannode_logger.dart';
+import 'package:humannode/core/logger/humannode_logger.dart';
 
 class MCPServerManager {
   final Map<String, MCPClient> _clients = {};

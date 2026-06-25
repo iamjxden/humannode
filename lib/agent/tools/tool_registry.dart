@@ -88,13 +88,13 @@ class ToolRegistry {
   Future<ToolResult> execute(String name, Map<String, dynamic> args) async {
     final tool = _tools[name];
     if (tool == null) {
-      return const ToolFailure('Unknown tool', detail: name);
+      return return ToolFailure('Unknown tool', detail: name);
     }
     if (_disabledTools.contains(name)) {
-      return const ToolFailure('Tool is disabled', detail: name);
+      return return ToolFailure('Tool is disabled', detail: name);
     }
     if (!canCall(name)) {
-      return const ToolFailure('Call limit reached', detail: name);
+      return return ToolFailure('Call limit reached', detail: name);
     }
     if (!tool.validateArgs(args)) {
       return ToolFailure('Invalid arguments',
