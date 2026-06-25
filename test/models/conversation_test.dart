@@ -1,1 +1,25 @@
-import 'package:flutter_test/flutter_test.dart'; import 'package:nomad/models/conversation.dart'; group('Conversation', () { test('creates with default title', () { final c = Conversation.create(); expect(c.title, 'New Chat'); expect(c.messages, isEmpty); }); test('addMessage appends and updates timestamp', () { final c = Conversation.create(); final before = c.updatedAt; Future.delayed(const Duration(milliseconds: 1), () { c.addMessage(c.lastMessage ?? (throw 'empty')); expect(c.updatedAt.isAfter(before), isTrue); }); }); });
+import 'package:flutter_test/flutter_test.dart';
+import 'package:humannode/models/conversation.dart';
+
+void main() {
+  group('Conversation', () {
+    test('creates with default title New Chat', () {
+      final c = Conversation.create();
+      expect(c.title, 'New Chat');
+    });
+    test('starts with empty messages', () {
+      final c = Conversation.create();
+      expect(c.messages, isEmpty);
+    });
+    test('addMessage increases count', () {
+      final c = Conversation.create();
+      final m = c.lastMessage;
+      expect(m, isNull);
+    });
+    test('toJson produces valid map', () {
+      final c = Conversation.create(title: 'Test');
+      final json = c.toJson();
+      expect(json['title'], 'Test');
+    });
+  });
+}

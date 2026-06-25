@@ -22,7 +22,7 @@ class ServiceLocator {
   static late final SettingsDao settingsDao;
   static late final FileCache fileCache;
   static late final LlamaBridge llamaBridge;
-  static late final NomadTokenizer tokenizer;
+  static late final HumanNodeTokenizer tokenizer;
   static late final ModelLoader modelLoader;
   static late final InferenceEngine inferenceEngine;
   static late final ToolRegistry toolRegistry;
@@ -45,7 +45,7 @@ class ServiceLocator {
     settingsDao = db.settingsDao;
     llamaBridge = LlamaBridge();
     await llamaBridge.load();
-    tokenizer = NomadTokenizer();
+    tokenizer = HumanNodeTokenizer();
     modelLoader = ModelLoader(llamaBridge: llamaBridge, fileCache: fileCache);
     inferenceEngine = InferenceEngine(llamaBridge: llamaBridge, modelLoader: modelLoader, tokenizer: tokenizer);
     toolRegistry = ToolRegistry(presetDao: presetDao);

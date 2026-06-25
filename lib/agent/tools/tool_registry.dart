@@ -13,7 +13,6 @@ import 'builtin/note_search_tool.dart';
 import 'builtin/summary_tool.dart';
 import 'builtin/memory_tool.dart';
 import '../../core/logger/humannode_logger.dart';
-import '../../storage/daos/preset_dao.dart';
 import '../../models/model_preset.dart';
 
 class ToolRegistry {

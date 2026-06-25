@@ -1,42 +1,9 @@
 [
-  {
-    "name": "llama-3.2-3b-instruct",
-    "architecture": "llama",
-    "quantization": "Q4_K_M",
-    "context_length": 8192,
-    "parameter_count": 3200000000,
-    "size_bytes": 2400000000,
-    "download_url": "",
-    "benchmark_tok_per_sec": 25.5
-  },
-  {
-    "name": "phi-3-mini-4k-instruct",
-    "architecture": "phi3",
-    "quantization": "Q4_K_M",
-    "context_length": 4096,
-    "parameter_count": 3800000000,
-    "size_bytes": 2600000000,
-    "download_url": "",
-    "benchmark_tok_per_sec": 30.2
-  },
-  {
-    "name": "gemma-2-2b-it",
-    "architecture": "gemma2",
-    "quantization": "Q4_K_M",
-    "context_length": 8192,
-    "parameter_count": 2000000000,
-    "size_bytes": 1600000000,
-    "download_url": "",
-    "benchmark_tok_per_sec": 35.0
-  },
-  {
-    "name": "qwen2.5-1.5b-instruct",
-    "architecture": "qwen2",
-    "quantization": "Q4_K_M",
-    "context_length": 32768,
-    "parameter_count": 1500000000,
-    "size_bytes": 1100000000,
-    "download_url": "",
-    "benchmark_tok_per_sec": 40.1
-  }
+  {"name":"llama-3.2-3b-instruct","architecture":"llama","quantization":"Q4_K_M","context_length":8192,"parameter_count":3200000000,"size_bytes":2400000000,"download_url":"","benchmark_tok_per_sec":25.5},
+  {"name":"phi-3-mini-4k-instruct","architecture":"phi3","quantization":"Q4_K_M","context_length":4096,"parameter_count":3800000000,"size_bytes":2600000000,"download_url":"","benchmark_tok_per_sec":30.2},
+  {"name":"gemma-2-2b-it","architecture":"gemma2","quantization":"Q4_K_M","context_length":8192,"parameter_count":2000000000,"size_bytes":1600000000,"download_url":"","benchmark_tok_per_sec":35.0},
+  {"name":"qwen2.5-1.5b-instruct","architecture":"qwen2","quantization":"Q4_K_M","context_length":32768,"parameter_count":1500000000,"size_bytes":1100000000,"download_url":"","benchmark_tok_per_sec":40.1},
+  {"name":"mistral-7b-instruct-v0.3","architecture":"llama","quantization":"Q4_K_M","context_length":32768,"parameter_count":7240000000,"size_bytes":4370000000,"download_url":"","benchmark_tok_per_sec":18.3},
+  {"name":"llama-3.1-8b-instruct","architecture":"llama","quantization":"Q4_K_M","context_length":131072,"parameter_count":8030000000,"size_bytes":4920000000,"download_url":"","benchmark_tok_per_sec":12.8},
+  {"name":"deepseek-coder-1.3b-instruct","architecture":"llama","quantization":"Q4_K_M","context_length":16384,"parameter_count":1300000000,"size_bytes":880000000,"download_url":"","benchmark_tok_per_sec":42.5}
 ]

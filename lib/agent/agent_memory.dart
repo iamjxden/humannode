@@ -1,4 +1,4 @@
-import '../storage/daos/message_dao.dart';
+import 'package:humannode/storage/database.dart';
 import '../models/message.dart';
 import '../config/app_config.dart';
 

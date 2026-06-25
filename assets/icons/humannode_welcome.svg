@@ -1,6 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
-  <rect width="400" height="300" rx="60" fill="#F8F7FC"/>
-  <path d="M200 80 L230 140 L300 150 L248 210 L260 290 L200 260 L140 290 L152 210 L100 150 L170 140Z" fill="#7C3AED" fill-opacity="0.15"/>
-  <circle cx="200" cy="200" r="40" fill="#7C3AED" fill-opacity="0.4"/>
-  <text x="200" y="265" text-anchor="middle" font-family="sans-serif" font-size="28" font-weight="bold" fill="#1A1A2E">HumanNode</text>
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="400" y2="300">
+      <stop offset="0%" stop-color="#F8F7FC"/>
+      <stop offset="100%" stop-color="#EDE8F5"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" rx="60" fill="url(#bg2)"/>
+  <circle cx="200" cy="120" r="48" fill="#7C3AED" opacity="0.1"/>
+  <circle cx="200" cy="120" r="36" fill="#7C3AED" opacity="0.08"/>
+  <path d="M200 60 C200 60 178 105 178 124 C178 137 188 147 200 147 C212 147 222 137 222 124 C222 105 200 60 200 60Z" fill="#7C3AED" opacity="0.8"/>
+  <circle cx="200" cy="115" r="10" fill="rgba(124,58,237,0.3)"/>
+  <text x="200" y="185" text-anchor="middle" font-family="system-ui, sans-serif" font-size="28" font-weight="800" fill="#1A1A2E" letter-spacing="-0.5">HumanNode</text>
+  <text x="200" y="210" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#777">Your AI. Your device. Anywhere.</text>
 </svg>
