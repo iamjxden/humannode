@@ -1,0 +1,36 @@
+class AppConfig {
+  static const String appName = 'HumanNode';
+  static const String version = '1.0.0';
+  static const int buildNumber = 1;
+  static const String githubRepo = 'https://github.com/iamjxden/humannode';
+  static const String githubIssues = 'https://github.com/iamjxden/humannode/issues';
+  static const String authorName = 'iamjxden';
+  static const int defaultMaxTokens = 4096;
+  static const int defaultContextWindow = 8192;
+  static const double defaultTemperature = 0.7;
+  static const double defaultTopP = 0.9;
+  static const int defaultTopK = 40;
+  static const double defaultRepetitionPenalty = 1.1;
+  static const int maxAgentSteps = 25;
+  static const int defaultAgentSteps = 15;
+  static const int memoryWindowMessages = 50;
+  static const int summaryThresholdTokens = 3000;
+  static const int batteryThrottleThreshold = 20;
+  static const int maxMessageLength = 32000;
+  static const int maxToolOutputLength = 8000;
+  static const int maxConversationTitleLength = 120;
+  static const int streamBufferSize = 1024;
+  static const Duration agentTimeout = Duration(minutes: 10);
+  static const Duration toolTimeout = Duration(seconds: 30);
+  static const Duration debounceDelay = Duration(milliseconds: 300);
+  static const Duration splashDuration = Duration(seconds: 2);
+  static const double minFontSize = 12.0;
+  static const double maxFontSize = 32.0;
+  static const double defaultFontSize = 16.0;
+  static const int maxDownloadRetries = 3;
+  static const String modelsRegistryAsset = 'assets/models/model_registry.json';
+  static const String defaultSystemPromptAsset = 'assets/prompts/system_default.txt';
+  static const String agentSystemPromptAsset = 'assets/prompts/system_agent.txt';
+  static const String codingSystemPromptAsset = 'assets/prompts/system_coding.txt';
+  static const String creativeSystemPromptAsset = 'assets/prompts/system_creative.txt';
+}

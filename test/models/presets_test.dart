@@ -1,0 +1,1 @@
+import 'package:flutter_test/flutter_test.dart'; import 'package:nomad/models/model_preset.dart'; group('ModelPreset', () { test('default preset has sensible values', () { final p = ModelPreset.defaultPreset(); expect(p.temperature, 0.7); }); test('coding preset is colder', () { expect(ModelPreset.coding().temperature, 0.3); }); });

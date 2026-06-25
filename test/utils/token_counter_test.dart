@@ -1,0 +1,1 @@
+import 'package:flutter_test/flutter_test.dart'; import 'package:nomad/utils/token_counter.dart'; group('TokenCounter', () { test('empty string is 0 tokens', () => expect(TokenCounter.estimate(''), 0)); test('approx 1 token per 3.5 chars', () => expect(TokenCounter.estimate('hello world'), greaterThan(1))); });
