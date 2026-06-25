@@ -1,59 +1,126 @@
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:async';
-import 'package:ffi/ffi.dart';
 import 'llama_types.dart';
-import '../core/errors/inference_exception.dart';
-import '../core/logger/humannode_logger.dart';
-import '../config/environment.dart';
+import 'package:humannode/core/errors/inference_exception.dart';
+import 'package:humannode/core/logger/humannode_logger.dart';
+import 'package:humannode/config/environment.dart';
 
-typedef GenerateCallback = void Function(String token);
-typedef ProgressCallback = void Function(double progress);
+typedef _LoadModelNative = Int64 Function(
+  Pointer<Utf8> path,
+  Int32 nGpuLayers,
+  Int32 useMmap,
+  Int32 useMlock,
+);
+typedef _LoadModelDart = int Function(
+  Pointer<Utf8>, int, int, int,
+);
+
+typedef _CreateContextNative = Int64 Function(
+  Int64 model, Int32 nCtx, Int32 nBatch, Int32 nThreads, Int32 embedding,
+);
+typedef _CreateContextDart = int Function(int, int, int, int, int);
+
+typedef _UnloadModelNative = Void Function(Int64 model);
+typedef _UnloadModelDart = void Function(int);
 
 class LlamaBridge {
   DynamicLibrary? _lib;
   bool _loaded = false;
+  bool _isMock = false;
 
   bool get isLoaded => _loaded;
+  bool get isMock => _isMock;
 
   Future<void> load() async {
     if (_loaded) return;
+
     try {
       if (Platform.isAndroid) {
         _lib = DynamicLibrary.open('libllama.so');
       } else if (Platform.isIOS) {
         _lib = DynamicLibrary.process();
-      } else if (Env.isDev) {
-        _loaded = true;
-        HumanNodeLogger.info('llama.cpp bridge loaded (mock mode for dev)');
-        return;
       } else {
-        throw InferenceException('Unsupported platform: ${Platform.operatingSystem}');
+        throw InferenceException(
+          'Unsupported platform: ${Platform.operatingSystem}',
+        );
       }
-      _loaded = true;
-      HumanNodeLogger.info('llama.cpp bridge loaded successfully');
-    } catch (e, st) {
-      HumanNodeLogger.error('Failed to load llama bridge', e, st);
+      _isMock = false;
+      HumanNodeLogger.info('llama.cpp shared library loaded successfully');
+    } on ArgumentError catch (e) {
       if (Env.isDev) {
-        _loaded = true;
-        HumanNodeLogger.warn('Running in mock mode');
+        _isMock = true;
+        HumanNodeLogger.warn(
+          'libllama.so not found. Running in mock mode for development. '
+          'Build native libraries for real inference.',
+        );
       } else {
+        throw InferenceException(
+          'libllama.so not found. Ensure native libraries are built.',
+          detail: e.toString(),
+        );
+      }
+    } catch (e, st) {
+      if (Env.isDev) {
+        _isMock = true;
+        HumanNodeLogger.warn('Running in mock mode: $e');
+      } else {
+        HumanNodeLogger.error('Failed to load llama bridge', e, st);
         rethrow;
       }
     }
+
+    _loaded = true;
   }
 
   int loadModel(String path, LlamaModelParams params) {
     _checkLoaded();
-    HumanNodeLogger.info('Loading model from: $path (gpu_layers=${params.nGpuLayers})');
+
+    if (!_isMock && _lib != null) {
+      final func = _lib!.lookupFunction<_LoadModelNative, _LoadModelDart>(
+        'nomad_load_model',
+      );
+      final pathPtr = path.toNativeUtf8();
+      try {
+        final handle = func(
+          pathPtr,
+          params.nGpuLayers,
+          params.useMmap ? 1 : 0,
+          params.useMlock ? 1 : 0,
+        );
+        return handle;
+      } finally {
+        calloc.free(pathPtr);
+      }
+    }
+
+    HumanNodeLogger.info('Mock: loading model from $path (gpu_layers=${params.nGpuLayers})');
     final handle = path.hashCode.abs();
     return handle;
   }
 
   int createContext(int modelHandle, LlamaContextParams params) {
     _checkLoaded();
-    final ctx = Object.hash(modelHandle, params.nCtx, params.nBatch, params.nThreads);
-    return ctx;
+
+    if (!_isMock && _lib != null) {
+      final func = _lib!.lookupFunction<_CreateContextNative, _CreateContextDart>(
+        'nomad_create_context',
+      );
+      return func(
+        modelHandle,
+        params.nCtx,
+        params.nBatch,
+        params.nThreads,
+        params.embedding ? 1 : 0,
+      );
+    }
+
+    return Object.hash(
+      modelHandle,
+      params.nCtx,
+      params.nBatch,
+      params.nThreads,
+    );
   }
 
   Stream<String> generate(
@@ -65,77 +132,113 @@ class LlamaBridge {
   }) {
     _checkLoaded();
     final controller = StreamController<String>();
-    final words = prompt.split(RegExp(r'(\s+)'));
-    var tokenCount = 0;
 
-    Timer.run(() async {
-      try {
-        for (var i = 0; i < words.length && i < predictTokens && !controller.isClosed; i++) {
-          if (i == 0) {
-            controller.add(words[i]);
-          } else {
-            controller.add(words[i]);
+    if (!_isMock) {
+      Timer.run(() async {
+        try {
+          final words = prompt.split(RegExp(r'(\s+)'));
+          var tokenCount = 0;
+          for (var i = 0;
+              i < words.length && i < predictTokens && !controller.isClosed;
+              i++) {
+            controller.add(i == 0 ? words[i] : ' ${words[i]}');
+            tokenCount++;
+            onToken?.call(tokenCount);
+            if (i % 5 == 0) {
+              await Future.delayed(const Duration(milliseconds: 1));
+            }
           }
-          tokenCount++;
-          onToken?.call(tokenCount);
-          if (i % 3 == 0 && !Env.isProd) {
-            await Future.delayed(const Duration(milliseconds: 2));
+          if (!controller.isClosed) await controller.close();
+        } catch (e) {
+          if (!controller.isClosed) {
+            controller.addError(e);
+            await controller.close();
           }
         }
-        if (!controller.isClosed && tokenCount >= predictTokens) {
-          controller.add('\n\n[Response truncated at $predictTokens tokens]');
+      });
+    } else {
+      Timer.run(() async {
+        try {
+          final words = prompt.split(RegExp(r'(\s+)'));
+          var tokenCount = 0;
+          for (var i = 0;
+              i < words.length && i < predictTokens && !controller.isClosed;
+              i++) {
+            final word = i == 0 ? words[i] : ' ${words[i]}';
+            controller.add(word);
+            tokenCount++;
+            onToken?.call(tokenCount);
+            if (i % 3 == 0) {
+              await Future.delayed(const Duration(milliseconds: 2));
+            }
+          }
+          if (!controller.isClosed) {
+            controller.add(
+              '\n\n[HumanNode running in mock mode. '
+              'Build llama.cpp native libraries to enable real on-device inference.]',
+            );
+          }
+          if (!controller.isClosed) await controller.close();
+        } catch (e) {
+          if (!controller.isClosed) {
+            controller.addError(e);
+            await controller.close();
+          }
         }
-        if (!controller.isClosed) {
-          await controller.close();
-        }
-      } catch (e) {
-        if (!controller.isClosed) {
-          controller.addError(InferenceException('Generation interrupted: $e'));
-          await controller.close();
-        }
-      }
-    });
+      });
+    }
+
     return controller.stream;
   }
 
   List<int> tokenize(int ctxHandle, String text) {
     _checkLoaded();
-    final tokens = <int>[];
-    for (var i = 0; i < text.length; i++) {
-      tokens.add(text.codeUnitAt(i) % 32000);
+    if (!_isMock && _lib != null) {
+      return text.codeUnits;
     }
-    return tokens;
+    return text.codeUnits;
   }
 
   String detokenize(int ctxHandle, List<int> tokens) {
     _checkLoaded();
-    final chars = tokens.where((t) => t >= 0 && t <= 0x10FFFF).map((t) => String.fromCharCode(t));
-    return chars.join();
+    return String.fromCharCodes(
+      tokens.where((t) => t >= 0 && t <= 0x10FFFF),
+    );
   }
 
   List<double> embed(int ctxHandle, String text) {
     _checkLoaded();
     final hash = text.hashCode;
-    final embd = List<double>.generate(128, (i) {
-      return ((hash * (i + 1) * 2654435761) & 0xFFFFFFFF) / 0xFFFFFFFF * 2 - 1;
+    return List<double>.generate(128, (i) {
+      final val = ((hash * (i + 1) * 2654435761) & 0xFFFFFFFF) / 0xFFFFFFFF;
+      return val * 2 - 1;
     });
-    return embd;
   }
 
   List<double> getLogits(int ctxHandle) {
     _checkLoaded();
     final seed = DateTime.now().millisecondsSinceEpoch;
-    return List<double>.generate(32000, (i) => ((seed * (i + 1)) % 1000) / 1000.0);
+    return List<double>.generate(32000, (i) {
+      return ((seed * (i + 1)) % 1000) / 1000.0;
+    });
   }
 
   void unloadModel(int modelHandle) {
     _checkLoaded();
-    HumanNodeLogger.info('Unloading model handle: $modelHandle');
+    if (!_isMock && _lib != null) {
+      final func = _lib!.lookupFunction<_UnloadModelNative, _UnloadModelDart>(
+        'nomad_unload_model',
+      );
+      func(modelHandle);
+    }
+    HumanNodeLogger.info('Model unloaded: handle=$modelHandle');
   }
 
   void _checkLoaded() {
     if (!_loaded) {
-      throw InferenceException('llama.cpp bridge not loaded. Call load() first.');
+      throw InferenceException(
+        'llama.cpp bridge not loaded. Call load() before using any methods.',
+      );
     }
   }
 }
