@@ -18,8 +18,6 @@ android {
         release { signingConfig signingConfigs.debug; ndk { abiFilters 'arm64-v8a' } }
         debug { ndk { abiFilters 'arm64-v8a', 'x86_64' } }
     }
-    externalNativeBuild { cmake { path "../../native/CMakeLists.txt" } }
-    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
 }
 flutter { source "../.." }
