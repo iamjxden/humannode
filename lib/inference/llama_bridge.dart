@@ -1,9 +1,7 @@
-import 'dart:io';
 import 'dart:async';
 import 'llama_types.dart';
 import 'package:humannode/core/errors/inference_exception.dart';
 import 'package:humannode/core/logger/humannode_logger.dart';
-import 'package:humannode/config/environment.dart';
 
 class LlamaBridge {
   bool _loaded = false;

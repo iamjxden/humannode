@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/inference_provider.dart';
-import '../../../providers/models_provider.dart';
 import '../../../core/di/service_locator.dart';
 import 'model_detail_sheet.dart';
 

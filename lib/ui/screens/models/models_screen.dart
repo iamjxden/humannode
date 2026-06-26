@@ -4,8 +4,6 @@ import '../../../providers/models_provider.dart';
 import '../../../providers/inference_provider.dart';
 import 'model_card.dart';
 import 'model_registry_browser.dart';
-import 'model_download_sheet.dart';
-import '../../../core/extensions/num_ext.dart';
 
 class ModelsScreen extends ConsumerStatefulWidget {
   const ModelsScreen({super.key});

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'llama_bridge.dart';
 import 'llama_types.dart';
 import 'model_loader.dart';
-import 'context_manager.dart';
 import 'sampler.dart';
 import 'tokenizer.dart';
 import '../core/errors/inference_exception.dart';

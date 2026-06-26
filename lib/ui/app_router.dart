@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:humannode/ui/screens/splash_screen.dart';
 import 'package:humannode/ui/screens/home_screen.dart';
