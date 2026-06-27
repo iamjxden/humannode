@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import '../../../models/message.dart';
+import 'package:humannode/config/theme.dart';
+import 'package:humannode/models/message.dart';
 
 class ChatMessageBubble extends StatelessWidget {
   final Message message;
@@ -9,89 +11,188 @@ class ChatMessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (message.isSystem) return const SizedBox.shrink();
-    if (message.isToolResult) return _ToolResultBubble(result: message.content);
+    if (message.isToolResult) return _ToolResultBubble(message: message);
+    return message.isUser
+        ? _UserBubble(message: message)
+        : _AssistantBubble(message: message);
+  }
+}
 
-    final isUser = message.isUser;
-    final cs = Theme.of(context).colorScheme;
+class _UserBubble extends StatelessWidget {
+  final Message message;
+  const _UserBubble({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 8),
-      child: Column(
-        crossAxisAlignment:
-            isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-        children: [
-          Container(
-            constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.88),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.only(left: 48, bottom: 12),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: GestureDetector(
+          onLongPress: () {
+            Clipboard.setData(ClipboardData(text: message.content));
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Copied'),
+                  duration: Duration(seconds: 1)),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: isUser
-                  ? cs.primaryContainer
-                  : cs.surfaceContainerHighest,
-              borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(18),
-                topRight: const Radius.circular(18),
-                bottomLeft: Radius.circular(isUser ? 18 : 4),
-                bottomRight: Radius.circular(isUser ? 4 : 18),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(4),
+              ),
+              boxShadow: [
+                BoxShadow(
+                    color: HumanNodeTheme.primary.withAlpha(60),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4)),
+              ],
             ),
-            child: isUser
-                ? SelectableText(message.content,
-                    style: Theme.of(context).textTheme.bodyMedium)
-                : MarkdownBody(
-                    data: message.content,
-                    selectable: true,
-                    onTapLink: (text, href, title) {},
-                    styleSheet: MarkdownStyleSheet(
-                      p: Theme.of(context).textTheme.bodyMedium,
-                      code: TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 13,
-                        backgroundColor: cs.surfaceContainerHighest,
-                      ),
-                      codeblockDecoration: BoxDecoration(
-                        color: cs.surface,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      blockquoteDecoration: BoxDecoration(
-                        border:
-                            Border(left: BorderSide(color: cs.primary, width: 3)),
-                      ),
-                    ),
-                  ),
+            child: Text(
+              message.content,
+              style: const TextStyle(
+                  color: Colors.white, fontSize: 14, height: 1.5),
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _ToolResultBubble extends StatelessWidget {
-  final String result;
-  const _ToolResultBubble({required this.result});
+class _AssistantBubble extends StatelessWidget {
+  final Message message;
+  const _AssistantBubble({required this.message});
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 8),
-      child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: cs.tertiaryContainer.withAlpha(60),
-          borderRadius: BorderRadius.circular(10),
+      padding: const EdgeInsets.only(right: 48, bottom: 16),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          width: 28,
+          height: 28,
+          margin: const EdgeInsets.only(right: 8, top: 2),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF818CF8), Color(0xFF4338CA)],
+            ),
+            boxShadow: [
+              BoxShadow(
+                  color: HumanNodeTheme.primary.withAlpha(80),
+                  blurRadius: 8),
+            ],
+          ),
+          child: const Icon(Icons.travel_explore_rounded,
+              color: Colors.white, size: 14),
         ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.build_circle, size: 14, color: cs.tertiary),
-          const SizedBox(width: 6),
+        Flexible(
+          child: GestureDetector(
+            onLongPress: () {
+              Clipboard.setData(ClipboardData(text: message.content));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text('Copied'),
+                    duration: Duration(seconds: 1)),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: HumanNodeTheme.surfaceCard,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(4),
+                  topRight: Radius.circular(20),
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+                border: Border.all(
+                    color: HumanNodeTheme.border, width: 0.5),
+              ),
+              child: MarkdownBody(
+                data: message.content,
+                selectable: true,
+                styleSheet: MarkdownStyleSheet(
+                  p: const TextStyle(
+                      color: HumanNodeTheme.textPrimary,
+                      fontSize: 14,
+                      height: 1.6),
+                  code: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                    color: Color(0xFF818CF8),
+                    backgroundColor: Color(0xFF1E1B4B),
+                  ),
+                  codeblockDecoration: BoxDecoration(
+                    color: HumanNodeTheme.surfaceElevated,
+                    borderRadius: BorderRadius.circular(10),
+                    border:
+                        Border.all(color: HumanNodeTheme.border, width: 0.5),
+                  ),
+                  h1: const TextStyle(
+                      color: HumanNodeTheme.textPrimary,
+                      fontWeight: FontWeight.w700),
+                  h2: const TextStyle(
+                      color: HumanNodeTheme.textPrimary,
+                      fontWeight: FontWeight.w700),
+                  h3: const TextStyle(
+                      color: HumanNodeTheme.textPrimary,
+                      fontWeight: FontWeight.w600),
+                  strong: const TextStyle(
+                      color: HumanNodeTheme.textPrimary,
+                      fontWeight: FontWeight.w700),
+                  em: const TextStyle(
+                      color: HumanNodeTheme.textSecondary,
+                      fontStyle: FontStyle.italic),
+                  listBullet: const TextStyle(
+                      color: HumanNodeTheme.primary),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+class _ToolResultBubble extends StatelessWidget {
+  final Message message;
+  const _ToolResultBubble({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0C1A0C),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFF166534), width: 0.5),
+        ),
+        child: Row(children: [
+          const Icon(Icons.build_circle_rounded,
+              size: 14, color: Color(0xFF22C55E)),
+          const SizedBox(width: 8),
           Flexible(
             child: Text(
-              result.length > 100
-                  ? '${result.substring(0, 100)}...'
-                  : result,
-              style: TextStyle(
-                  fontSize: 12, color: cs.onSurface.withAlpha(160)),
+              message.content.length > 120
+                  ? '${message.content.substring(0, 120)}...'
+                  : message.content,
+              style: const TextStyle(
+                  fontSize: 12, color: Color(0xFF86EFAC)),
             ),
           ),
         ]),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:humannode/config/theme.dart';
 import 'package:humannode/core/di/service_locator.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
+
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
@@ -12,29 +14,25 @@ class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _fade;
+  late final Animation<double> _scale;
 
   @override
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    );
-    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeIn);
+        vsync: this, duration: const Duration(milliseconds: 1200));
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _scale = Tween<double>(begin: 0.8, end: 1.0)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack));
     _ctrl.forward();
     Future.delayed(const Duration(seconds: 2), _navigate);
   }
 
   Future<void> _navigate() async {
     if (!mounted) return;
-    final hasSeenOnboarding =
-        await ServiceLocator.settingsDao.get('onboarding_complete');
+    final seen = await ServiceLocator.settingsDao.get('onboarding_complete');
     if (!mounted) return;
-    if (hasSeenOnboarding == 'true') {
-      context.go('/home');
-    } else {
-      context.go('/onboarding');
-    }
+    context.go(seen == 'true' ? '/home' : '/onboarding');
   }
 
   @override
@@ -45,51 +43,78 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: cs.surface,
-      body: Center(
-        child: FadeTransition(
-          opacity: _fade,
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Container(
-              width: 110,
-              height: 110,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [cs.primary, cs.tertiary]),
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: cs.primary.withAlpha(80),
-                    blurRadius: 32,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
+      backgroundColor: HumanNodeTheme.surface,
+      body: Stack(children: [
+        Positioned.fill(
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment(0, -0.3),
+                radius: 1.2,
+                colors: [Color(0x301E1B4B), HumanNodeTheme.surface],
               ),
-              child: const Icon(Icons.travel_explore_rounded,
-                  color: Colors.white, size: 56),
             ),
-            const SizedBox(height: 28),
-            Text('HumanNode',
-                style: TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.w800,
-                    color: cs.onSurface,
-                    letterSpacing: -1)),
-            const SizedBox(height: 10),
-            Text('Your AI. Your device. Anywhere.',
-                style: TextStyle(
-                    fontSize: 15, color: cs.onSurface.withAlpha(140))),
-            const SizedBox(height: 48),
-            SizedBox(
-              width: 26,
-              height: 26,
-              child: CircularProgressIndicator(
-                  strokeWidth: 2.5, color: cs.primary),
-            ),
-          ]),
+          ),
         ),
-      ),
+        Center(
+          child: FadeTransition(
+            opacity: _fade,
+            child: ScaleTransition(
+              scale: _scale,
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF818CF8), Color(0xFF4338CA)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                          color: HumanNodeTheme.primary.withAlpha(120),
+                          blurRadius: 40,
+                          spreadRadius: 8),
+                    ],
+                  ),
+                  child: const Icon(Icons.travel_explore_rounded,
+                      color: Colors.white, size: 52),
+                ),
+                const SizedBox(height: 28),
+                const Text('HumanNode',
+                    style: TextStyle(
+                        color: HumanNodeTheme.textPrimary,
+                        fontSize: 34,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -1)),
+                const SizedBox(height: 6),
+                const Text('Built by Jaden',
+                    style: TextStyle(
+                        color: HumanNodeTheme.primary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                const Text('Your AI. Your device. Anywhere.',
+                    style: TextStyle(
+                        color: HumanNodeTheme.textSecondary, fontSize: 13)),
+                const SizedBox(height: 52),
+                SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                        HumanNodeTheme.primary.withAlpha(160)),
+                  ),
+                ),
+              ]),
+            ),
+          ),
+        ),
+      ]),
     );
   }
 }

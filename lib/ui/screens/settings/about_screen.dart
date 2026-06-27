@@ -1,57 +1,112 @@
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+import 'package:humannode/config/theme.dart';
 
-class AboutScreen extends StatefulWidget {
+class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
-  @override State<AboutScreen> createState() => _AboutScreenState();
-}
 
-class _AboutScreenState extends State<AboutScreen> {
-  String _version = '1.0.0';
-  String _build = '1';
-
-  @override void initState() {
-    super.initState();
-    PackageInfo.fromPlatform().then((info) {
-      if (mounted) setState(() { _version = info.version; _build = info.buildNumber; });
-    });
-  }
-
-  @override Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('About')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(40),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
+      backgroundColor: HumanNodeTheme.surface,
+      appBar: AppBar(
+          backgroundColor: HumanNodeTheme.surface, title: const Text('About')),
+      body: ListView(padding: const EdgeInsets.all(20), children: [
+        Center(
+          child: Column(children: [
             Container(
-              width: 88, height: 88,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                    begin: Alignment.topLeft, end: Alignment.bottomRight,
-                    colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.tertiary]),
-                borderRadius: BorderRadius.circular(22),
+                gradient: const LinearGradient(
+                    colors: [Color(0xFF818CF8), Color(0xFF4338CA)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                      color: HumanNodeTheme.primary.withAlpha(100),
+                      blurRadius: 20)
+                ],
               ),
-              child: const Icon(Icons.travel_explore_rounded, color: Colors.white, size: 42),
+              child: const Icon(Icons.travel_explore_rounded,
+                  color: Colors.white, size: 40),
             ),
-            const SizedBox(height: 20),
-            Text('HumanNode', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 6),
-            Text('Version $_version (build $_build)', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(120))),
-            const SizedBox(height: 20),
-            Text('Local-first AI workspace.\nYour data, your device, your rules.',
-                textAlign: TextAlign.center, style: const TextStyle(fontSize: 14)),
-            const SizedBox(height: 28),
-            OutlinedButton(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) =>
-                  Scaffold(appBar: AppBar(title: const Text('Licenses')), body: const LicensePage()))),
-              child: const Text('Licenses'),
-            ),
-            const SizedBox(height: 6),
-            TextButton(onPressed: () {}, child: const Text('Privacy Policy')),
+            const SizedBox(height: 16),
+            const Text('HumanNode',
+                style: TextStyle(
+                    color: HumanNodeTheme.textPrimary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 24,
+                    letterSpacing: -0.5)),
+            const SizedBox(height: 4),
+            const Text('Version 1.0.0',
+                style: TextStyle(
+                    color: HumanNodeTheme.textSecondary, fontSize: 13)),
+            const SizedBox(height: 4),
+            const Text('Built by Jaden',
+                style: TextStyle(
+                    color: HumanNodeTheme.primary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13)),
           ]),
         ),
-      ),
+        const SizedBox(height: 32),
+        _card('About', '''HumanNode is a local-first AI workspace that runs large language models directly on your device. No cloud, no subscriptions, complete privacy.
+
+Your data never leaves your device. All inference happens locally using on-device compute.'''),
+        const SizedBox(height: 16),
+        _card('Privacy Policy', '''HumanNode does not collect, transmit, or store any personal data on external servers.
+
+All conversations, notes, and model files are stored exclusively on your device and are never sent to any server. Model downloads occur directly from Hugging Face CDN and no user data is included.
+
+API keys, if provided, are stored in your device's secure keystore and are only transmitted to the respective API provider when you explicitly use that feature.
+
+We do not use analytics, crash reporting, or any form of tracking.'''),
+        const SizedBox(height: 16),
+        _card('Terms of Service', '''By using HumanNode, you agree to the following:
+
+1. HumanNode is provided as-is without warranty of any kind.
+2. You are responsible for the models you download and the content you generate.
+3. You must comply with the license terms of any AI model you download and use.
+4. HumanNode is not liable for any outputs generated by AI models.
+5. You agree not to use HumanNode to generate illegal, harmful, or malicious content.
+
+Models downloaded through HumanNode are subject to their respective licenses (MIT, Apache 2.0, Llama Community License, etc.).'''),
+        const SizedBox(height: 16),
+        _card('Open Source', '''HumanNode is built on open source technology:
+
+• Flutter — BSD License
+• llama.cpp — MIT License  
+• flutter_riverpod — MIT License
+• go_router — BSD License
+• flutter_markdown — BSD License
+• flutter_secure_storage — BSD License
+
+Special thanks to the open source AI community.'''),
+        const SizedBox(height: 32),
+      ]),
     );
   }
+
+  Widget _card(String title, String body) => Container(
+        decoration: BoxDecoration(
+          color: HumanNodeTheme.surfaceCard,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: HumanNodeTheme.border, width: 0.5),
+        ),
+        padding: const EdgeInsets.all(18),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title,
+              style: const TextStyle(
+                  color: HumanNodeTheme.textPrimary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15)),
+          const SizedBox(height: 10),
+          Text(body,
+              style: const TextStyle(
+                  color: HumanNodeTheme.textSecondary,
+                  fontSize: 13,
+                  height: 1.6)),
+        ]),
+      );
 }

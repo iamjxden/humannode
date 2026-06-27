@@ -1,107 +1,166 @@
 import 'package:flutter/material.dart';
+import 'package:humannode/config/theme.dart';
 
 class ChatInputBar extends StatefulWidget {
-  final Function(String) onSend;
-  final VoidCallback? onStop;
+  final void Function(String) onSend;
   final bool isEnabled;
+  final VoidCallback? onStop;
 
-  const ChatInputBar({super.key, required this.onSend, this.onStop, this.isEnabled = true});
+  const ChatInputBar({
+    super.key,
+    required this.onSend,
+    required this.isEnabled,
+    this.onStop,
+  });
 
-  @override State<ChatInputBar> createState() => _ChatInputBarState();
+  @override
+  State<ChatInputBar> createState() => _ChatInputBarState();
 }
 
 class _ChatInputBarState extends State<ChatInputBar> {
-  final _controller = TextEditingController();
+  final _ctrl = TextEditingController();
   bool _hasText = false;
-  final FocusNode _focusNode = FocusNode();
 
-  @override void initState() {
+  @override
+  void initState() {
     super.initState();
-    _controller.addListener(() {
-      final hasText = _controller.text.trim().isNotEmpty;
-      if (hasText != _hasText) setState(() => _hasText = hasText);
+    _ctrl.addListener(() {
+      final has = _ctrl.text.trim().isNotEmpty;
+      if (has != _hasText) setState(() => _hasText = has);
     });
   }
 
-  void _handleSend() {
-    final text = _controller.text.trim();
+  void _send() {
+    final text = _ctrl.text.trim();
     if (text.isEmpty) return;
+    _ctrl.clear();
     widget.onSend(text);
-    _controller.clear();
-    _focusNode.requestFocus();
   }
 
-  @override Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: cs.surface,
-        boxShadow: [BoxShadow(color: Colors.black.withAlpha(10), blurRadius: 10, offset: const Offset(0, -2))],
+      padding: EdgeInsets.only(
+        left: 12,
+        right: 12,
+        top: 10,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 14,
       ),
-      padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
-      child: SafeArea(
-        child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          IconButton(
-            icon: const Icon(Icons.attach_file_rounded, size: 22),
-            onPressed: widget.isEnabled ? () {} : null,
-            padding: const EdgeInsets.all(10),
-          ),
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              focusNode: _focusNode,
-              maxLines: 5,
-              minLines: 1,
-              enabled: widget.isEnabled,
-              textCapitalization: TextCapitalization.sentences,
-              textInputAction: TextInputAction.newline,
-              decoration: InputDecoration(
-                hintText: 'Message HumanNode...',
-                filled: true,
-                fillColor: cs.surfaceContainerHighest.withAlpha(60),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
-              ),
-              onSubmitted: (_) => _handleSend(),
+      decoration: const BoxDecoration(
+        color: HumanNodeTheme.surface,
+        border: Border(
+            top: BorderSide(color: HumanNodeTheme.border, width: 0.5)),
+      ),
+      child: Row(children: [
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: HumanNodeTheme.surfaceCard,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: HumanNodeTheme.border, width: 0.5),
             ),
-          ),
-          const SizedBox(width: 4),
-          if (widget.onStop != null)
-            Container(
-              margin: const EdgeInsets.only(bottom: 2),
-              decoration: BoxDecoration(color: cs.error, borderRadius: BorderRadius.circular(20)),
-              child: IconButton(
-                icon: const Icon(Icons.stop, color: Colors.white, size: 20),
-                onPressed: widget.onStop,
+            child: Row(children: [
+              const SizedBox(width: 6),
+              IconButton(
+                icon: const Icon(Icons.attach_file_rounded,
+                    color: HumanNodeTheme.textSecondary, size: 20),
+                onPressed: () {},
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                padding: EdgeInsets.zero,
               ),
-            )
-          else
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: _hasText
-                  ? Container(
+              Expanded(
+                child: TextField(
+                  controller: _ctrl,
+                  style: const TextStyle(
+                      color: HumanNodeTheme.textPrimary, fontSize: 14),
+                  decoration: const InputDecoration(
+                    hintText: 'Ask me anything...',
+                    hintStyle: TextStyle(
+                        color: HumanNodeTheme.textSecondary, fontSize: 14),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                    isDense: true,
+                    filled: false,
+                  ),
+                  maxLines: 5,
+                  minLines: 1,
+                  textCapitalization: TextCapitalization.sentences,
+                  onSubmitted: (_) => _send(),
+                ),
+              ),
+              const SizedBox(width: 4),
+            ]),
+          ),
+        ),
+        const SizedBox(width: 8),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: widget.onStop != null
+              ? _CircleBtn(
+                  key: const ValueKey('stop'),
+                  icon: Icons.stop_rounded,
+                  color: Colors.red,
+                  onTap: widget.onStop!,
+                )
+              : _hasText
+                  ? _CircleBtn(
                       key: const ValueKey('send'),
-                      margin: const EdgeInsets.only(bottom: 2),
-                      decoration: BoxDecoration(color: cs.primary, borderRadius: BorderRadius.circular(20)),
-                      child: IconButton(
-                          icon: const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 20),
-                          onPressed: _handleSend),
+                      icon: Icons.arrow_upward_rounded,
+                      color: HumanNodeTheme.primary,
+                      onTap: _send,
                     )
-                  : IconButton(
+                  : _CircleBtn(
                       key: const ValueKey('mic'),
-                      icon: const Icon(Icons.mic_rounded, size: 22),
-                      onPressed: widget.isEnabled ? () {} : null,
+                      icon: Icons.mic_rounded,
+                      color: HumanNodeTheme.surfaceElevated,
+                      iconColor: HumanNodeTheme.textSecondary,
+                      onTap: () {},
                     ),
-            ),
-        ]),
-      ),
+        ),
+      ]),
     );
   }
 
-  @override void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
+  @override
+  void dispose() {
+    _ctrl.dispose();
     super.dispose();
+  }
+}
+
+class _CircleBtn extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final Color? iconColor;
+  final VoidCallback onTap;
+
+  const _CircleBtn({
+    super.key,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+    this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          boxShadow: iconColor == null
+              ? [BoxShadow(color: color.withAlpha(80), blurRadius: 12)]
+              : null,
+        ),
+        child: Icon(icon, color: iconColor ?? Colors.white, size: 20),
+      ),
+    );
   }
 }

@@ -1,58 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:humannode/config/theme.dart';
 
 class MainShell extends StatefulWidget {
   final Widget child;
   const MainShell({super.key, required this.child});
+
   @override
   State<MainShell> createState() => _MainShellState();
 }
 
 class _MainShellState extends State<MainShell>
     with SingleTickerProviderStateMixin {
-  bool _drawerOpen = false;
+  bool _open = false;
   late final AnimationController _ctrl;
-  late final Animation<double> _slide;
+  late final Animation<Offset> _slide;
   late final Animation<double> _fade;
+  late final Animation<double> _scale;
 
-  static const _navItems = [
-    _NavItem(Icons.chat_bubble_rounded, 'Chat', '/home'),
-    _NavItem(Icons.smart_toy_rounded, 'Models', '/home/models'),
-    _NavItem(Icons.notes_rounded, 'Notes', '/home/notes'),
-    _NavItem(Icons.settings_rounded, 'Settings', '/home/settings'),
+  static const _items = [
+    (Icons.chat_bubble_rounded, Icons.chat_bubble_outlined, 'Chat', '/home'),
+    (Icons.smart_toy_rounded, Icons.smart_toy_outlined, 'Models', '/home/models'),
+    (Icons.sticky_note_2_rounded, Icons.sticky_note_2_outlined, 'Notes', '/home/notes'),
+    (Icons.settings_rounded, Icons.settings_outlined, 'Settings', '/home/settings'),
   ];
 
   @override
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 280));
-    _slide = CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic);
+        vsync: this, duration: const Duration(milliseconds: 300));
+    _slide = Tween<Offset>(begin: const Offset(-1, 0), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
     _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeIn);
-  }
-
-  void _openDrawer() {
-    setState(() => _drawerOpen = true);
-    _ctrl.forward();
-  }
-
-  void _closeDrawer() {
-    _ctrl.reverse().then((_) => setState(() => _drawerOpen = false));
-  }
-
-  void _navigate(String route) {
-    _closeDrawer();
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (mounted) context.go(route);
-    });
-  }
-
-  String _currentRoute(BuildContext ctx) {
-    final loc = GoRouterState.of(ctx).uri.toString();
-    if (loc.startsWith('/home/models')) return '/home/models';
-    if (loc.startsWith('/home/notes')) return '/home/notes';
-    if (loc.startsWith('/home/settings')) return '/home/settings';
-    return '/home';
+    _scale = Tween<double>(begin: 0.95, end: 1.0)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
   }
 
   @override
@@ -61,174 +44,272 @@ class _MainShellState extends State<MainShell>
     super.dispose();
   }
 
+  void _toggle() {
+    HapticFeedback.lightImpact();
+    if (_open) {
+      _ctrl.reverse().then((_) => setState(() => _open = false));
+    } else {
+      setState(() => _open = true);
+      _ctrl.forward();
+    }
+  }
+
+  void _navigate(String route) {
+    _ctrl.reverse().then((_) {
+      setState(() => _open = false);
+      if (mounted) context.go(route);
+    });
+  }
+
+  String _active(BuildContext ctx) {
+    final loc = GoRouterState.of(ctx).uri.toString();
+    if (loc.startsWith('/home/models')) return '/home/models';
+    if (loc.startsWith('/home/notes')) return '/home/notes';
+    if (loc.startsWith('/home/settings')) return '/home/settings';
+    return '/home';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final currentRoute = _currentRoute(context);
-    final cs = Theme.of(context).colorScheme;
-
+    final active = _active(context);
     return Scaffold(
-      backgroundColor: cs.surface,
+      backgroundColor: HumanNodeTheme.surface,
       body: Stack(children: [
         widget.child,
-        if (_drawerOpen) ...[
+        if (_open) ...[
           FadeTransition(
             opacity: _fade,
             child: GestureDetector(
-              onTap: _closeDrawer,
-              child: Container(color: Colors.black54),
+              onTap: _toggle,
+              child: Container(color: Colors.black.withAlpha(140)),
             ),
           ),
           SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(-1, 0),
-              end: Offset.zero,
-            ).animate(_slide),
-            child: _Drawer(
-              currentRoute: currentRoute,
-              navItems: _navItems,
-              onNavigate: _navigate,
-              onClose: _closeDrawer,
+            position: _slide,
+            child: ScaleTransition(
+              scale: _scale,
+              alignment: Alignment.centerLeft,
+              child: _DrawerPanel(
+                active: active,
+                items: _items,
+                onNavigate: _navigate,
+              ),
             ),
           ),
         ],
-      ]),
-      floatingActionButton: FloatingActionButton(
-        mini: true,
-        heroTag: 'drawer_btn',
-        backgroundColor: cs.primaryContainer,
-        foregroundColor: cs.primary,
-        elevation: 2,
-        onPressed: _drawerOpen ? _closeDrawer : _openDrawer,
-        child: AnimatedIcon(
-          icon: AnimatedIcons.menu_close,
-          progress: _ctrl,
-          size: 22,
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12, top: 8),
+            child: _HamburgerButton(open: _open, onTap: _toggle),
+          ),
         ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
+      ]),
     );
   }
 }
 
-class _NavItem {
-  final IconData icon;
-  final String label;
-  final String route;
-  const _NavItem(this.icon, this.label, this.route);
+class _HamburgerButton extends StatelessWidget {
+  final bool open;
+  final VoidCallback onTap;
+  const _HamburgerButton({required this.open, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: HumanNodeTheme.surfaceCard,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: HumanNodeTheme.border, width: 0.5),
+        ),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: Icon(
+            open ? Icons.close_rounded : Icons.menu_rounded,
+            key: ValueKey(open),
+            size: 18,
+            color: HumanNodeTheme.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _Drawer extends StatelessWidget {
-  final String currentRoute;
-  final List<_NavItem> navItems;
+class _DrawerPanel extends StatelessWidget {
+  final String active;
+  final List<(IconData, IconData, String, String)> items;
   final void Function(String) onNavigate;
-  final VoidCallback onClose;
 
-  const _Drawer({
-    required this.currentRoute,
-    required this.navItems,
+  const _DrawerPanel({
+    required this.active,
+    required this.items,
     required this.onNavigate,
-    required this.onClose,
   });
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Container(
-      width: 270,
+      width: 265,
       height: double.infinity,
-      decoration: BoxDecoration(
-        color: cs.surface,
+      decoration: const BoxDecoration(
+        color: HumanNodeTheme.surfaceCard,
+        border: Border(
+            right: BorderSide(color: HumanNodeTheme.border, width: 0.5)),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(60),
-            blurRadius: 24,
-            offset: const Offset(4, 0),
-          )
+          BoxShadow(color: Colors.black54, blurRadius: 32, offset: Offset(8, 0)),
         ],
       ),
       child: SafeArea(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
             child: Row(children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                      colors: [cs.primary, cs.tertiary],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight),
-                  borderRadius: BorderRadius.circular(12),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF818CF8), Color(0xFF4338CA)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(11),
+                  boxShadow: [
+                    BoxShadow(
+                        color: HumanNodeTheme.primary.withAlpha(100),
+                        blurRadius: 12)
+                  ],
                 ),
                 child: const Icon(Icons.travel_explore_rounded,
-                    color: Colors.white, size: 22),
+                    color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('HumanNode',
+                const Text('HumanNode',
                     style: TextStyle(
+                        color: HumanNodeTheme.textPrimary,
                         fontWeight: FontWeight.w800,
-                        fontSize: 18,
-                        color: cs.onSurface,
-                        letterSpacing: -0.5)),
-                Text('Local AI Workspace',
+                        fontSize: 16,
+                        letterSpacing: -0.3)),
+                const Text('Built by Jaden',
                     style: TextStyle(
-                        fontSize: 11,
-                        color: cs.onSurface.withAlpha(120))),
+                        color: HumanNodeTheme.textSecondary, fontSize: 11)),
               ]),
             ]),
           ),
-          const SizedBox(height: 16),
-          Divider(color: cs.outlineVariant, height: 1),
-          const SizedBox(height: 8),
-          ...navItems.map((item) {
-            final active = currentRoute == item.route;
+          const SizedBox(height: 24),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(color: HumanNodeTheme.border, height: 1),
+          ),
+          const SizedBox(height: 12),
+          ...items.map((item) {
+            final (activeIcon, inactiveIcon, label, route) = item;
+            final isActive = active == route;
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-              child: Material(
-                color: active ? cs.primaryContainer : Colors.transparent,
-                borderRadius: BorderRadius.circular(14),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: () => onNavigate(item.route),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 13),
-                    child: Row(children: [
-                      Icon(item.icon,
-                          size: 22,
-                          color: active ? cs.primary : cs.onSurface.withAlpha(160)),
-                      const SizedBox(width: 14),
-                      Text(item.label,
-                          style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: active
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                              color: active
-                                  ? cs.primary
-                                  : cs.onSurface.withAlpha(180))),
-                    ]),
-                  ),
-                ),
+              child: _NavTile(
+                icon: isActive ? activeIcon : inactiveIcon,
+                label: label,
+                isActive: isActive,
+                onTap: () => onNavigate(route),
               ),
             );
           }),
           const Spacer(),
-          Divider(color: cs.outlineVariant, height: 1),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(color: HumanNodeTheme.border, height: 1),
+          ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Row(children: [
-              Icon(Icons.circle, size: 8, color: Colors.green.shade400),
+              Container(
+                width: 7,
+                height: 7,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0xFF22C55E),
+                  boxShadow: [
+                    BoxShadow(color: Color(0x6622C55E), blurRadius: 6)
+                  ],
+                ),
+              ),
               const SizedBox(width: 8),
-              Text('On-device inference',
+              const Text('On-device inference',
                   style: TextStyle(
-                      fontSize: 12,
-                      color: cs.onSurface.withAlpha(120))),
+                      fontSize: 11,
+                      color: HumanNodeTheme.textSecondary)),
+              const Spacer(),
+              const Text('v1.0.0',
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: HumanNodeTheme.textSecondary)),
             ]),
           ),
         ]),
+      ),
+    );
+  }
+}
+
+class _NavTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _NavTile({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: isActive
+          ? HumanNodeTheme.primary.withAlpha(20)
+          : Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        splashColor: HumanNodeTheme.primary.withAlpha(30),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(children: [
+            Icon(icon,
+                size: 20,
+                color: isActive
+                    ? HumanNodeTheme.primary
+                    : HumanNodeTheme.textSecondary),
+            const SizedBox(width: 12),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight:
+                        isActive ? FontWeight.w700 : FontWeight.w500,
+                    color: isActive
+                        ? HumanNodeTheme.textPrimary
+                        : HumanNodeTheme.textSecondary)),
+            if (isActive) ...[
+              const Spacer(),
+              Container(
+                width: 4,
+                height: 4,
+                decoration: const BoxDecoration(
+                    color: HumanNodeTheme.primary,
+                    shape: BoxShape.circle),
+              ),
+            ],
+          ]),
+        ),
       ),
     );
   }
