@@ -7,11 +7,22 @@ class ConversationsState {
   final bool isLoading;
   final String? error;
 
-  const ConversationsState({this.conversations = const [], this.isLoading = false, this.error});
+  const ConversationsState({
+    this.conversations = const [],
+    this.isLoading = false,
+    this.error,
+  });
 
-  ConversationsState copyWith({List<Conversation>? conversations, bool? isLoading, String? error}) =>
-      ConversationsState(conversations: conversations ?? this.conversations,
-          isLoading: isLoading ?? this.isLoading, error: error);
+  ConversationsState copyWith({
+    List<Conversation>? conversations,
+    bool? isLoading,
+    String? error,
+  }) =>
+      ConversationsState(
+        conversations: conversations ?? this.conversations,
+        isLoading: isLoading ?? this.isLoading,
+        error: error,
+      );
 }
 
 class ConversationsNotifier extends StateNotifier<ConversationsState> {
@@ -40,7 +51,7 @@ class ConversationsNotifier extends StateNotifier<ConversationsState> {
   Future<void> rename(String id, String newTitle) async {
     final convo = await ServiceLocator.conversationDao.getById(id);
     if (convo != null) {
-      convo.title = newTitle;
+      convo.updateTitle(newTitle);
       await ServiceLocator.conversationDao.update(convo);
       await load();
     }
@@ -50,10 +61,14 @@ class ConversationsNotifier extends StateNotifier<ConversationsState> {
     final convo = await ServiceLocator.conversationDao.getById(id);
     if (convo != null) {
       convo.pinned = !convo.pinned;
+      convo.updatedAt = DateTime.now();
       await ServiceLocator.conversationDao.update(convo);
       await load();
     }
   }
 }
 
-final conversationsProvider = StateNotifierProvider<ConversationsNotifier, ConversationsState>((ref) => ConversationsNotifier());
+final conversationsProvider =
+    StateNotifierProvider<ConversationsNotifier, ConversationsState>(
+  (ref) => ConversationsNotifier(),
+);

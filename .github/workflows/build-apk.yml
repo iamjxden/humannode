@@ -18,29 +18,39 @@ jobs:
         with:
           flutter-version: '3.24'
           channel: 'stable'
+          cache: true
 
       - run: flutter config --no-analytics
       - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos
       - run: flutter build apk --release
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
+          SHORT_SHA=${GITHUB_SHA::7}
+          echo "tag=v${VERSION}-${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "name=HumanNode v${VERSION} (${SHORT_SHA})" >> $GITHUB_OUTPUT
 
       - uses: actions/upload-artifact@v4
         with:
-          name: HumanNode-APK
+          name: HumanNode-APK-${{ steps.version.outputs.tag }}
           path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v1.0.0
-          name: HumanNode v1.0.0
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.name }}
           body: |
-            ## HumanNode v1.0.0
-            
+            ## HumanNode ${{ steps.version.outputs.tag }}
+
             Local-first mobile AI workspace. Run LLMs directly on your device.
-            
+
             ### Download
             Download the APK from Assets below and install on your Android device.
-            
+
             ### Features
             - On-device GGUF model inference
             - Agentic mode with 11 built-in tools
@@ -49,7 +59,7 @@ jobs:
             - Notes with full CRUD
             - Light/dark themes
             - 5 languages
-            
+
             ### Requirements
             - Android 7.0+
             - 2-4 GB free storage for models

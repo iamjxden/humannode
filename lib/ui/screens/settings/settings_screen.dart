@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../config/environment.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
-  @override Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(children: [
@@ -26,15 +28,20 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _section(BuildContext context, String title) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 22, 16, 6),
-    child: Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700,
-        color: Theme.of(context).colorScheme.primary, letterSpacing: 1.0)),
-  );
+        padding: const EdgeInsets.fromLTRB(16, 22, 16, 6),
+        child: Text(title,
+            style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Theme.of(context).colorScheme.primary,
+                letterSpacing: 1.0)),
+      );
 
-  Widget _tile(BuildContext context, IconData icon, String title, String route) => ListTile(
-    leading: Icon(icon, size: 22),
-    title: Text(title, style: const TextStyle(fontSize: 15)),
-    trailing: const Icon(Icons.chevron_right_rounded, size: 20),
-    onTap: () => Navigator.pushNamed(context, route),
-  );
+  Widget _tile(BuildContext context, IconData icon, String title, String route) =>
+      ListTile(
+        leading: Icon(icon, size: 22),
+        title: Text(title, style: const TextStyle(fontSize: 15)),
+        trailing: const Icon(Icons.chevron_right_rounded, size: 20),
+        onTap: () => context.push(route),
+      );
 }

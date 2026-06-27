@@ -4,6 +4,7 @@ import 'package:humannode/inference/inference_engine.dart';
 import 'package:humannode/models/message.dart';
 import 'package:humannode/config/app_config.dart';
 import 'package:humannode/core/logger/humannode_logger.dart';
+import 'package:humannode/core/extensions/string_ext.dart';
 import 'agent_state.dart';
 import 'agent_memory.dart';
 import 'agent_prompt_builder.dart';
@@ -22,7 +23,8 @@ class AgentLoop {
 
   final _stateController = StreamController<AgentState>.broadcast();
   final _outputController = StreamController<String>.broadcast();
-  final _toolCallController = StreamController<Map<String, dynamic>>.broadcast();
+  final _toolCallController =
+      StreamController<Map<String, dynamic>>.broadcast();
 
   AgentState _state = AgentState.idle;
   bool _interruptRequested = false;
@@ -49,7 +51,8 @@ class AgentLoop {
   Future<void> run(List<Message> messages) async {
     if (_modelPath.isEmpty) {
       if (!_outputController.isClosed) {
-        _outputController.add('No model loaded. Please download and load a model first.');
+        _outputController
+            .add('No model loaded. Please download and load a model first.');
       }
       _setState(AgentState.errored);
       return;
@@ -99,7 +102,6 @@ class AgentLoop {
               prompt = agentPromptBuilder.buildContinuation('');
             }
             _stepCount++;
-            break;
 
           case 'tool_call':
             _setState(AgentState.acting);
@@ -110,23 +112,16 @@ class AgentLoop {
               _toolCallController.add({'name': name, 'args': args});
             }
 
-            final stopwatch = Stopwatch()..start();
             final result = await toolRegistry.execute(name, args);
-            stopwatch.stop();
 
             final resultStr = switch (result) {
               ToolSuccess<String>(data: final d) => d,
               ToolFailure(error: final e, detail: final d) =>
-                  d != null && d.isNotEmpty ? '$e: $d' : e,
+                d != null && d.isNotEmpty ? '$e: $d' : e,
               ToolSuccess(data: final d) => d.toString(),
             };
 
-            agentMemory.add(
-              Message.toolResult(
-                name: name,
-                result: resultStr,
-              ),
-            );
+            agentMemory.add(Message.toolResult(name: name, result: resultStr));
 
             if (result is ToolFailure && reflexion.canRetry) {
               final correction = reflexion.correct(
@@ -138,11 +133,9 @@ class AgentLoop {
               prompt = agentPromptBuilder.buildContinuation(resultStr);
             }
             _stepCount++;
-            break;
 
           default:
             _stepCount++;
-            break;
         }
       }
 
@@ -154,7 +147,8 @@ class AgentLoop {
       } else if (_stepCount >= _maxSteps) {
         _setState(AgentState.stopped);
         if (!_outputController.isClosed) {
-          _outputController.add('\n[Maximum agent steps ($_maxSteps) reached]');
+          _outputController
+              .add('\n[Maximum agent steps ($_maxSteps) reached]');
         }
       }
     } catch (e, st) {
@@ -200,36 +194,31 @@ class AgentLoop {
       '${stopwatch.elapsed.inMilliseconds}ms',
     );
 
-    final finalMatch = RegExp(
-      r'<final_answer>(.*?)</final_answer>',
-      dotAll: true,
-    ).firstMatch(text);
+    final finalMatch =
+        RegExp(r'<final_answer>(.*?)</final_answer>', dotAll: true)
+            .firstMatch(text);
 
     if (finalMatch != null) {
-      final content = finalMatch.group(1)?.trim() ?? text;
-      return {'type': 'final_answer', 'content': content};
+      return {'type': 'final_answer', 'content': finalMatch.group(1)?.trim() ?? text};
     }
 
-    final toolMatches = RegExp(
-      r'<tool_call>(.*?)</tool_call>',
-      dotAll: true,
-    ).allMatches(text).toList();
+    final toolMatches =
+        RegExp(r'<tool_call>(.*?)</tool_call>', dotAll: true).allMatches(text);
 
-    if (toolMatches.isNotEmpty) {
-      for (final match in toolMatches) {
-        try {
-          final jsonStr = match.group(1)!.trim();
-          final json = jsonDecode(jsonStr) as Map<String, dynamic>;
-          if (json.containsKey('name') && json.containsKey('args')) {
-            return {
-              'type': 'tool_call',
-              'name': json['name'] as String,
-              'args': (json['args'] as Map<String, dynamic>?) ?? {},
-            };
-          }
-        } on FormatException {
-          HumanNodeLogger.warn('Failed to parse tool call JSON: ${match.group(1)}');
+    for (final match in toolMatches) {
+      try {
+        final json =
+            jsonDecode(match.group(1)!.trim()) as Map<String, dynamic>;
+        if (json.containsKey('name') && json.containsKey('args')) {
+          return {
+            'type': 'tool_call',
+            'name': json['name'] as String,
+            'args': (json['args'] as Map<String, dynamic>?) ?? {},
+          };
         }
+      } on FormatException {
+        HumanNodeLogger.warn(
+            'Failed to parse tool call JSON: ${match.group(1)}');
       }
     }
 
@@ -252,9 +241,4 @@ class AgentLoop {
     _outputController.close();
     _toolCallController.close();
   }
-}
-
-extension _StringTruncate on String {
-  String truncate(int maxLen) =>
-      length <= maxLen ? this : '${substring(0, maxLen - 3)}...';
 }

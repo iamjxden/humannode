@@ -13,27 +13,33 @@ import 'package:humannode/agent/agent_prompt_builder.dart';
 import 'package:humannode/core/logger/humannode_logger.dart';
 
 class ServiceLocator {
-  static late final AppDatabase db;
-  static late final SecureStore secureStore;
-  static late final ConversationDao conversationDao;
-  static late final MessageDao messageDao;
-  static late final NoteDao noteDao;
-  static late final PresetDao presetDao;
-  static late final SettingsDao settingsDao;
-  static late final FileCache fileCache;
-  static late final LlamaBridge llamaBridge;
-  static late final HumanNodeTokenizer tokenizer;
-  static late final ModelLoader modelLoader;
-  static late final InferenceEngine inferenceEngine;
-  static late final ToolRegistry toolRegistry;
-  static late final AgentMemory agentMemory;
-  static late final AgentPromptBuilder agentPromptBuilder;
-  static late final AgentLoop agentLoop;
-  static late final AgentController agentController;
+  static late AppDatabase db;
+  static late SecureStore secureStore;
+  static late ConversationDao conversationDao;
+  static late MessageDao messageDao;
+  static late NoteDao noteDao;
+  static late PresetDao presetDao;
+  static late SettingsDao settingsDao;
+  static late FileCache fileCache;
+  static late LlamaBridge llamaBridge;
+  static late HumanNodeTokenizer tokenizer;
+  static late ModelLoader modelLoader;
+  static late InferenceEngine inferenceEngine;
+  static late ToolRegistry toolRegistry;
+  static late AgentMemory agentMemory;
+  static late AgentPromptBuilder agentPromptBuilder;
+  static late AgentLoop agentLoop;
+  static late AgentController agentController;
   static bool _initialized = false;
 
   static Future<void> init() async {
     if (_initialized) return;
+    await _bootstrap();
+    _initialized = true;
+    HumanNodeLogger.info('ServiceLocator initialized');
+  }
+
+  static Future<void> _bootstrap() async {
     secureStore = SecureStore();
     fileCache = FileCache();
     await fileCache.init();
@@ -47,15 +53,30 @@ class ServiceLocator {
     await llamaBridge.load();
     tokenizer = HumanNodeTokenizer();
     modelLoader = ModelLoader(llamaBridge: llamaBridge, fileCache: fileCache);
-    inferenceEngine = InferenceEngine(llamaBridge: llamaBridge, modelLoader: modelLoader, tokenizer: tokenizer);
+    inferenceEngine = InferenceEngine(
+        llamaBridge: llamaBridge,
+        modelLoader: modelLoader,
+        tokenizer: tokenizer);
     toolRegistry = ToolRegistry(presetDao: presetDao);
     await toolRegistry.init();
     agentMemory = AgentMemory(messageDao: messageDao);
-    agentPromptBuilder = AgentPromptBuilder(toolRegistry: toolRegistry, agentMemory: agentMemory);
+    agentPromptBuilder = AgentPromptBuilder(
+        toolRegistry: toolRegistry, agentMemory: agentMemory);
     await agentPromptBuilder.loadDefaultPrompt();
-    agentLoop = AgentLoop(inferenceEngine: inferenceEngine, toolRegistry: toolRegistry, agentMemory: agentMemory, agentPromptBuilder: agentPromptBuilder);
+    agentLoop = AgentLoop(
+        inferenceEngine: inferenceEngine,
+        toolRegistry: toolRegistry,
+        agentMemory: agentMemory,
+        agentPromptBuilder: agentPromptBuilder);
     agentController = AgentController(agentLoop: agentLoop);
-    _initialized = true;
-    HumanNodeLogger.info('ServiceLocator initialized');
+  }
+
+  static Future<void> reset() async {
+    if (!_initialized) return;
+    agentController.dispose();
+    agentLoop.dispose();
+    modelLoader.unloadAll();
+    await db.close();
+    _initialized = false;
   }
 }

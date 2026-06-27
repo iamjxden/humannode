@@ -22,17 +22,24 @@ class ChatState {
   });
 
   ChatState copyWith({
-    Conversation? conversation, List<Message>? messages,
-    bool? isLoading, bool? isStreaming, String? error, ModelPreset? activePreset,
-  }) => ChatState(
-    conversation: conversation ?? this.conversation,
-    messages: messages ?? this.messages,
-    isLoading: isLoading ?? this.isLoading,
-    isStreaming: isStreaming ?? this.isStreaming,
-    error: error,
-    activePreset: activePreset ?? this.activePreset,
-  );
+    Conversation? conversation,
+    List<Message>? messages,
+    bool? isLoading,
+    bool? isStreaming,
+    Object? error = _sentinel,
+    ModelPreset? activePreset,
+  }) =>
+      ChatState(
+        conversation: conversation ?? this.conversation,
+        messages: messages ?? this.messages,
+        isLoading: isLoading ?? this.isLoading,
+        isStreaming: isStreaming ?? this.isStreaming,
+        error: identical(error, _sentinel) ? this.error : error as String?,
+        activePreset: activePreset ?? this.activePreset,
+      );
 }
+
+const Object _sentinel = Object();
 
 class ChatNotifier extends StateNotifier<ChatState> {
   ChatNotifier() : super(const ChatState());
@@ -43,12 +50,14 @@ class ChatNotifier extends StateNotifier<ChatState> {
   }
 
   void selectConversation(Conversation convo) {
-    state = ChatState(conversation: convo, messages: convo.messages);
+    state = ChatState(conversation: convo, messages: List.from(convo.messages));
   }
 
   void sendMessage(String content) {
+    if (content.trim().isEmpty) return;
     if (state.conversation == null) newConversation();
-    final msg = Message.user(content, conversationId: state.conversation!.id);
+    final msg =
+        Message.user(content, conversationId: state.conversation!.id);
     state.conversation!.addMessage(msg);
     state = state.copyWith(
       messages: List.from(state.messages)..add(msg),
@@ -59,33 +68,42 @@ class ChatNotifier extends StateNotifier<ChatState> {
   }
 
   void receiveAssistantStream(String chunk) {
-    if (state.messages.isEmpty || state.conversation == null) return;
+    if (state.conversation == null) return;
     if (!state.isStreaming) {
-      final msg = Message.assistant(chunk, conversationId: state.conversation!.id);
+      final msg = Message.assistant(chunk,
+          conversationId: state.conversation!.id);
       state.conversation!.addMessage(msg);
       state = state.copyWith(
         messages: List.from(state.messages)..add(msg),
         isStreaming: true,
+        isLoading: false,
       );
       return;
     }
-    final lastIndex = state.messages.length - 1;
-    final last = state.messages[lastIndex];
+    final msgs = List<Message>.from(state.messages);
+    final lastIdx = msgs.length - 1;
+    if (lastIdx < 0) return;
+    final last = msgs[lastIdx];
     if (last.role != 'assistant') {
-      final msg = Message.assistant(chunk, conversationId: state.conversation!.id);
+      final msg = Message.assistant(chunk,
+          conversationId: state.conversation!.id);
       state.conversation!.addMessage(msg);
-      state = state.copyWith(messages: List.from(state.messages)..add(msg));
+      state = state.copyWith(messages: msgs..add(msg));
       return;
     }
     final updated = Message(
-      id: last.id, conversationId: last.conversationId,
-      role: 'assistant', content: last.content + chunk,
+      id: last.id,
+      conversationId: last.conversationId,
+      role: 'assistant',
+      content: last.content + chunk,
       createdAt: last.createdAt,
     );
-    state.conversation!.messages[state.conversation!.messages.length - 1] = updated;
-    final newMessages = List<Message>.from(state.messages);
-    newMessages[newMessages.length - 1] = updated;
-    state = state.copyWith(messages: newMessages);
+    if (state.conversation!.messages.isNotEmpty) {
+      state.conversation!.messages[state.conversation!.messages.length - 1] =
+          updated;
+    }
+    msgs[lastIdx] = updated;
+    state = state.copyWith(messages: msgs);
   }
 
   void finishStreaming() {
@@ -98,9 +116,12 @@ class ChatNotifier extends StateNotifier<ChatState> {
     state = state.copyWith(isLoading: false, isStreaming: false);
   }
 
-  void setError(String error) => state = state.copyWith(error: error, isLoading: false);
+  void setError(String error) =>
+      state = state.copyWith(error: error, isLoading: false, isStreaming: false);
+
   void clearError() => state = state.copyWith(error: null);
   void setPreset(ModelPreset preset) => state = state.copyWith(activePreset: preset);
 }
 
-final chatProvider = StateNotifierProvider<ChatNotifier, ChatState>((ref) => ChatNotifier());
+final chatProvider =
+    StateNotifierProvider<ChatNotifier, ChatState>((ref) => ChatNotifier());

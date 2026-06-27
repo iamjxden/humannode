@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:flutter/services.dart';
 import '../config/app_config.dart';
 import '../config/environment.dart';
 import 'tools/tool_registry.dart';
@@ -15,28 +15,26 @@ class AgentPromptBuilder {
 
   Future<void> loadDefaultPrompt() async {
     try {
-      final defaultFile = File(AppConfig.defaultSystemPromptAsset);
-      if (await defaultFile.exists()) {
-        _defaultPrompt = await defaultFile.readAsString();
-      }
+      _defaultPrompt =
+          await rootBundle.loadString(AppConfig.defaultSystemPromptAsset);
     } catch (_) {}
 
     try {
-      final agentFile = File(AppConfig.agentSystemPromptAsset);
-      if (await agentFile.exists()) {
-        _agentPrompt = await agentFile.readAsString();
-      }
+      _agentPrompt =
+          await rootBundle.loadString(AppConfig.agentSystemPromptAsset);
     } catch (_) {}
 
     if (_defaultPrompt.isEmpty) {
-      _defaultPrompt = 'You are HumanNode, a helpful AI assistant running locally on mobile. '
+      _defaultPrompt =
+          'You are HumanNode, a helpful AI assistant running locally on mobile. '
           'You are concise, direct, and privacy-conscious. '
           'You help with reasoning, coding, writing, and analysis. '
           'You have access to tools to complete tasks. Use them when needed.';
     }
 
     if (_agentPrompt.isEmpty) {
-      _agentPrompt = 'You are HumanNode in AGENTIC MODE. You have access to tools. '
+      _agentPrompt =
+          'You are HumanNode in AGENTIC MODE. You have access to tools. '
           'Think step by step. Use tools by outputting <tool_call>{"name":"...","args":{...}}</tool_call>. '
           'When finished, output <final_answer> with your response. '
           'One tool call per turn. Be persistent.';
@@ -45,13 +43,8 @@ class AgentPromptBuilder {
     _currentSystemPrompt = _defaultPrompt;
   }
 
-  void setSystemPrompt(String prompt) {
-    _currentSystemPrompt = prompt;
-  }
-
-  void resetToDefault() {
-    _currentSystemPrompt = _defaultPrompt;
-  }
+  void setSystemPrompt(String prompt) => _currentSystemPrompt = prompt;
+  void resetToDefault() => _currentSystemPrompt = _defaultPrompt;
 
   Future<String> build({
     required List<Map<String, String>> messages,
@@ -75,11 +68,15 @@ class AgentPromptBuilder {
 
     if (agentMode) {
       buffer.writeln('<agent_mode>');
-      buffer.writeln('You are operating in agentic mode with access to tools.');
-      buffer.writeln('TOOL CALL FORMAT: <tool_call>{"name":"tool_name","args":{"key":"value"}}</tool_call>');
-      buffer.writeln('When all tasks are done, simply respond with your answer.');
+      buffer.writeln(
+          'You are operating in agentic mode with access to tools.');
+      buffer.writeln(
+          'TOOL CALL FORMAT: <tool_call>{"name":"tool_name","args":{"key":"value"}}</tool_call>');
+      buffer.writeln(
+          'When all tasks are done, simply respond with your answer.');
       buffer.writeln('You may call tools multiple times in sequence.');
-      buffer.writeln('If a tool returns an error, analyze it and try to correct your approach.');
+      buffer.writeln(
+          'If a tool returns an error, analyze it and try to correct your approach.');
       buffer.writeln('</agent_mode>');
       buffer.writeln();
 
@@ -98,9 +95,10 @@ class AgentPromptBuilder {
       for (final msg in messages) {
         final role = msg['role'] ?? 'unknown';
         final content = msg['content'] ?? '';
-        final truncatedContent = agentMode && content.length > 2000
-            ? '${content.substring(0, 2000)}...'
-            : content;
+        final truncatedContent =
+            agentMode && content.length > 2000
+                ? '${content.substring(0, 2000)}...'
+                : content;
         buffer.writeln('  <$role>$truncatedContent</$role>');
       }
       buffer.writeln('</conversation>');
@@ -121,7 +119,8 @@ class AgentPromptBuilder {
     buffer.writeln(truncated);
     buffer.writeln('</tool_result>');
     buffer.writeln();
-    buffer.writeln('Continue based on the tool result above. '
+    buffer.writeln(
+        'Continue based on the tool result above. '
         'If it succeeded, proceed with your task. '
         'If it failed, analyze the error and try a different approach. '
         'If the task is complete, provide your final answer.');

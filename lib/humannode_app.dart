@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:humannode/providers/settings_provider.dart';
 import 'config/theme.dart';
-import 'package:humannode/ui/app_router.dart';
+import 'ui/app_router.dart';
 
-class HumanNodeApp extends StatelessWidget {
+class HumanNodeApp extends ConsumerWidget {
   const HumanNodeApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final router = AppRouter.router;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+    final themeMode = settings.darkMode ? ThemeMode.dark : ThemeMode.light;
+
     return MaterialApp.router(
       title: 'HumanNode',
       debugShowCheckedModeBanner: false,
       theme: HumanNodeTheme.light,
       darkTheme: HumanNodeTheme.dark,
-      themeMode: ThemeMode.system,
-      routerConfig: router,
+      themeMode: themeMode,
+      routerConfig: AppRouter.router,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -29,10 +33,8 @@ class HumanNodeApp extends StatelessWidget {
         Locale('es'),
       ],
       localeResolutionCallback: (locale, supportedLocales) {
-        for (final supportedLocale in supportedLocales) {
-          if (supportedLocale.languageCode == locale?.languageCode) {
-            return supportedLocale;
-          }
+        for (final supported in supportedLocales) {
+          if (supported.languageCode == locale?.languageCode) return supported;
         }
         return supportedLocales.first;
       },

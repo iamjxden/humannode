@@ -9,11 +9,19 @@ class AppDatabase {
   final List<ModelPreset> _presets = [];
   final Map<String, String> _settings = {};
 
-  ConversationDao get conversationDao => ConversationDao(this);
-  MessageDao get messageDao => MessageDao(this);
-  NoteDao get noteDao => NoteDao(this);
-  PresetDao get presetDao => PresetDao(this);
-  SettingsDao get settingsDao => SettingsDao(this);
+  late final ConversationDao conversationDao;
+  late final MessageDao messageDao;
+  late final NoteDao noteDao;
+  late final PresetDao presetDao;
+  late final SettingsDao settingsDao;
+
+  AppDatabase() {
+    conversationDao = ConversationDao(this);
+    messageDao = MessageDao(this);
+    noteDao = NoteDao(this);
+    presetDao = PresetDao(this);
+    settingsDao = SettingsDao(this);
+  }
 
   List<Conversation> get conversations => _convs;
   List<Message> get messages => _msgs;
@@ -25,68 +33,106 @@ class AppDatabase {
 }
 
 class ConversationDao {
-  final AppDatabase db;
-  ConversationDao(this.db);
+  final AppDatabase _db;
+  ConversationDao(this._db);
+
   Future<List<Conversation>> getAll({bool includeArchived = false}) async {
-    final filtered = db.conversations.where((c) => includeArchived || !c.isArchived).toList();
+    final filtered = _db.conversations
+        .where((c) => includeArchived || !c.isArchived)
+        .toList();
     filtered.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     return filtered;
   }
+
   Future<Conversation?> getById(String id) async {
-    try { return db.conversations.firstWhere((c) => c.id == id); } catch (_) { return null; }
+    try {
+      return _db.conversations.firstWhere((c) => c.id == id);
+    } catch (_) {
+      return null;
+    }
   }
-  Future<void> insert(Conversation c) async => db.conversations.add(c);
+
+  Future<void> insert(Conversation c) async => _db.conversations.add(c);
+
   Future<void> update(Conversation c) async {
-    final i = db.conversations.indexWhere((x) => x.id == c.id);
-    if (i >= 0) db.conversations[i] = c;
+    final i = _db.conversations.indexWhere((x) => x.id == c.id);
+    if (i >= 0) _db.conversations[i] = c;
   }
+
   Future<void> delete(String id) async {
-    db.conversations.removeWhere((c) => c.id == id);
-    db.messages.removeWhere((m) => m.conversationId == id);
+    _db.conversations.removeWhere((c) => c.id == id);
+    _db.messages.removeWhere((m) => m.conversationId == id);
   }
 }
 
 class MessageDao {
-  final AppDatabase db;
-  MessageDao(this.db);
+  final AppDatabase _db;
+  MessageDao(this._db);
+
   Future<List<Message>> getByConversation(String convId, {int? limit}) async {
-    var msgs = db.messages.where((m) => m.conversationId == convId).toList();
+    var msgs =
+        _db.messages.where((m) => m.conversationId == convId).toList();
     msgs.sort((a, b) => a.createdAt.compareTo(b.createdAt));
     if (limit != null) msgs = msgs.take(limit).toList();
     return msgs;
   }
-  Future<void> insert(Message m) async => db.messages.add(m);
-  Future<void> deleteByConversation(String convId) async => db.messages.removeWhere((m) => m.conversationId == convId);
-  Future<int> count(String convId) async => db.messages.where((m) => m.conversationId == convId).length;
+
+  Future<void> insert(Message m) async => _db.messages.add(m);
+
+  Future<void> deleteByConversation(String convId) async =>
+      _db.messages.removeWhere((m) => m.conversationId == convId);
+
+  Future<int> count(String convId) async =>
+      _db.messages.where((m) => m.conversationId == convId).length;
 }
 
 class NoteDao {
-  final AppDatabase db;
-  NoteDao(this.db);
-  Future<List<Map<String, dynamic>>> getAll() async => db.notes;
+  final AppDatabase _db;
+  NoteDao(this._db);
+
+  Future<List<Map<String, dynamic>>> getAll() async => List.from(_db.notes);
+
   Future<void> insert(String id, String title, String content) async {
-    db.notes.insert(0, {'id': id, 'title': title, 'content': content, 'created_at': DateTime.now().toIso8601String(), 'updated_at': DateTime.now().toIso8601String()});
+    _db.notes.insert(0, {
+      'id': id,
+      'title': title,
+      'content': content,
+      'created_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toIso8601String(),
+    });
   }
+
   Future<void> update(String id, String title, String content) async {
-    final i = db.notes.indexWhere((n) => n['id'] == id);
-    if (i >= 0) { db.notes[i]['title'] = title; db.notes[i]['content'] = content; db.notes[i]['updated_at'] = DateTime.now().toIso8601String(); }
+    final i = _db.notes.indexWhere((n) => n['id'] == id);
+    if (i >= 0) {
+      _db.notes[i]['title'] = title;
+      _db.notes[i]['content'] = content;
+      _db.notes[i]['updated_at'] = DateTime.now().toIso8601String();
+    }
   }
-  Future<void> delete(String id) async => db.notes.removeWhere((n) => n['id'] == id);
+
+  Future<void> delete(String id) async =>
+      _db.notes.removeWhere((n) => n['id'] == id);
 }
 
 class PresetDao {
-  final AppDatabase db;
-  PresetDao(this.db);
-  Future<List<ModelPreset>> getAll() async => db.presets;
-  Future<void> insert(ModelPreset p) async => db.presets.add(p);
-  Future<void> delete(String id) async => db.presets.removeWhere((p) => p.id == id);
+  final AppDatabase _db;
+  PresetDao(this._db);
+
+  Future<List<ModelPreset>> getAll() async => List.from(_db.presets);
+  Future<void> insert(ModelPreset p) async => _db.presets.add(p);
+  Future<void> delete(String id) async =>
+      _db.presets.removeWhere((p) => p.id == id);
 }
 
 class SettingsDao {
-  final AppDatabase db;
-  SettingsDao(this.db);
-  Future<String?> get(String key) async => db.settings[key];
-  Future<void> set(String key, String value) async => db.settings[key] = value;
-  Future<void> delete(String key) async => db.settings.remove(key);
-  Future<Map<String, String>> getAll() async => Map.unmodifiable(db.settings);
+  final AppDatabase _db;
+  SettingsDao(this._db);
+
+  Future<String?> get(String key) async => _db.settings[key];
+  Future<void> set(String key, String value) async =>
+      _db.settings[key] = value;
+  Future<void> delete(String key) async => _db.settings.remove(key);
+  Future<Map<String, String>> getAll() async =>
+      Map.unmodifiable(_db.settings);
 }

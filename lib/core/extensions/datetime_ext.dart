@@ -12,10 +12,23 @@ extension DateTimeExt on DateTime {
     return '${(diff.inDays / 365).floor()}y ago';
   }
 
-  String get short => '${year.toString().substring(2)}/${month.toString().padLeft(2, '0')}/${day.toString().padLeft(2, '0')}';
+  String get short =>
+      '${year.toString().substring(2)}/${month.toString().padLeft(2, '0')}/${day.toString().padLeft(2, '0')}';
   String get iso => toIso8601String().substring(0, 19);
-  String get timeOnly => '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
-  bool get isToday => DateTime.now().difference(this).inDays == 0;
-  bool get isYesterday => DateTime.now().difference(this).inDays == 1;
+  String get timeOnly =>
+      '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+
+  bool get isToday {
+    final now = DateTime.now();
+    return now.year == year && now.month == month && now.day == day;
+  }
+
+  bool get isYesterday {
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    return yesterday.year == year &&
+        yesterday.month == month &&
+        yesterday.day == day;
+  }
+
   bool get isThisWeek => DateTime.now().difference(this).inDays < 7;
 }

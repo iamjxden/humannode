@@ -1,8 +1,5 @@
-nference/model_loader.dart';/d
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-nference/model_loader.dart';/d
 import '../core/di/service_locator.dart';
-nference/model_loader.dart';/d
 import '../inference/model_loader.dart';
 
 class InferenceState {
@@ -16,50 +13,68 @@ class InferenceState {
   final String? error;
 
   const InferenceState({
-    this.isLoaded = false, this.isGenerating = false,
-    this.modelPath, this.modelName, this.contextSize,
-    this.tokensPerSecond, this.totalTokens, this.error,
+    this.isLoaded = false,
+    this.isGenerating = false,
+    this.modelPath,
+    this.modelName,
+    this.contextSize,
+    this.tokensPerSecond,
+    this.totalTokens,
+    this.error,
   });
 
   InferenceState copyWith({
-    bool? isLoaded, bool? isGenerating, String? modelPath,
-    String? modelName, int? contextSize, double? tokensPerSecond,
-    int? totalTokens, String? error,
-  }) => InferenceState(
-    isLoaded: isLoaded ?? this.isLoaded,
-    isGenerating: isGenerating ?? this.isGenerating,
-    modelPath: modelPath ?? this.modelPath,
-    modelName: modelName ?? this.modelName,
-    contextSize: contextSize ?? this.contextSize,
-    tokensPerSecond: tokensPerSecond ?? this.tokensPerSecond,
-    totalTokens: totalTokens ?? this.totalTokens,
-    error: error,
-  );
+    bool? isLoaded,
+    bool? isGenerating,
+    String? modelPath,
+    String? modelName,
+    int? contextSize,
+    double? tokensPerSecond,
+    int? totalTokens,
+    Object? error = _sentinel,
+  }) =>
+      InferenceState(
+        isLoaded: isLoaded ?? this.isLoaded,
+        isGenerating: isGenerating ?? this.isGenerating,
+        modelPath: modelPath ?? this.modelPath,
+        modelName: modelName ?? this.modelName,
+        contextSize: contextSize ?? this.contextSize,
+        tokensPerSecond: tokensPerSecond ?? this.tokensPerSecond,
+        totalTokens: totalTokens ?? this.totalTokens,
+        error: identical(error, _sentinel) ? this.error : error as String?,
+      );
 }
+
+const Object _sentinel = Object();
 
 class InferenceNotifier extends StateNotifier<InferenceState> {
   InferenceNotifier() : super(const InferenceState());
 
   Future<void> loadModel(String path) async {
-    state = state.copyWith(isLoaded: false, modelPath: path,
-        modelName: path.split('/').last, error: null);
+    state = state.copyWith(
+      isLoaded: false,
+      modelPath: path,
+      modelName: path.split('/').last,
+      error: null,
+    );
     try {
       final result = await ServiceLocator.modelLoader.load(path);
       state = state.copyWith(
         isLoaded: true,
         modelName: result.info.name,
         contextSize: result.info.contextSize,
+        error: null,
       );
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(isLoaded: false, error: e.toString());
     }
   }
 
-  void setGenerating(bool generating) => state = state.copyWith(isGenerating: generating);
+  void setGenerating(bool generating) =>
+      state = state.copyWith(isGenerating: generating);
 
-  void updateStats(int totalTokens, double tps) {
-    state = state.copyWith(totalTokens: totalTokens, tokensPerSecond: tps);
-  }
+  void updateStats(int totalTokens, double tps) =>
+      state = state.copyWith(totalTokens: totalTokens, tokensPerSecond: tps);
 
   void unloadModel() {
     if (state.modelPath != null) {
@@ -71,4 +86,7 @@ class InferenceNotifier extends StateNotifier<InferenceState> {
   void clearError() => state = state.copyWith(error: null);
 }
 
-final inferenceProvider = StateNotifierProvider<InferenceNotifier, InferenceState>((ref) => InferenceNotifier());
+final inferenceProvider =
+    StateNotifierProvider<InferenceNotifier, InferenceState>(
+  (ref) => InferenceNotifier(),
+);

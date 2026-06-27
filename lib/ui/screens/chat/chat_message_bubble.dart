@@ -6,22 +6,28 @@ class ChatMessageBubble extends StatelessWidget {
   final Message message;
   const ChatMessageBubble({super.key, required this.message});
 
-  @override Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     if (message.isSystem) return const SizedBox.shrink();
+    if (message.isToolResult) return _ToolResultBubble(result: message.content);
+
     final isUser = message.isUser;
     final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 8),
       child: Column(
-        crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment:
+            isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          if (message.isToolResult)
-            _ToolResultBubble(result: message.content),
           Container(
-            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.88),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.88),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: isUser ? cs.primaryContainer : cs.surfaceContainerHighest,
+              color: isUser
+                  ? cs.primaryContainer
+                  : cs.surfaceContainerHighest,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(18),
                 topRight: const Radius.circular(18),
@@ -30,7 +36,8 @@ class ChatMessageBubble extends StatelessWidget {
               ),
             ),
             child: isUser
-                ? SelectableText(message.content, style: Theme.of(context).textTheme.bodyMedium)
+                ? SelectableText(message.content,
+                    style: Theme.of(context).textTheme.bodyMedium)
                 : MarkdownBody(
                     data: message.content,
                     selectable: true,
@@ -38,7 +45,7 @@ class ChatMessageBubble extends StatelessWidget {
                     styleSheet: MarkdownStyleSheet(
                       p: Theme.of(context).textTheme.bodyMedium,
                       code: TextStyle(
-                        fontFamily: 'JetBrainsMono',
+                        fontFamily: 'monospace',
                         fontSize: 13,
                         backgroundColor: cs.surfaceContainerHighest,
                       ),
@@ -47,7 +54,8 @@ class ChatMessageBubble extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       blockquoteDecoration: BoxDecoration(
-                        border: Border(left: BorderSide(color: cs.primary, width: 3)),
+                        border:
+                            Border(left: BorderSide(color: cs.primary, width: 3)),
                       ),
                     ),
                   ),
@@ -61,25 +69,33 @@ class ChatMessageBubble extends StatelessWidget {
 class _ToolResultBubble extends StatelessWidget {
   final String result;
   const _ToolResultBubble({required this.result});
-  @override Widget build(BuildContext context) {
+
+  @override
+  Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: cs.tertiaryContainer.withAlpha(60),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(Icons.build_circle, size: 14, color: cs.tertiary),
-        const SizedBox(width: 6),
-        Flexible(
-          child: Text(
-            result.length > 100 ? '${result.substring(0, 100)}...' : result,
-            style: TextStyle(fontSize: 12, color: cs.onSurface.withAlpha(160)),
-          ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 8),
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: cs.tertiaryContainer.withAlpha(60),
+          borderRadius: BorderRadius.circular(10),
         ),
-      ]),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.build_circle, size: 14, color: cs.tertiary),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              result.length > 100
+                  ? '${result.substring(0, 100)}...'
+                  : result,
+              style: TextStyle(
+                  fontSize: 12, color: cs.onSurface.withAlpha(160)),
+            ),
+          ),
+        ]),
+      ),
     );
   }
 }

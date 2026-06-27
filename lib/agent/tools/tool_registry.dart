@@ -24,34 +24,67 @@ class ToolRegistry {
 
   ToolRegistry({required PresetDao presetDao}) : _presetDao = presetDao;
 
-  Future<void> init() async { _registerDefaults(); _loadFromPresetDao(); }
+  Future<void> init() async {
+    _registerDefaults();
+    await _loadFromPresetDao();
+  }
 
   void _registerDefaults() {
-  Future<void> _loadFromPresetDao() async { try { final presets = await _presetDao.getAll(); } catch (_) {} }
-    _register(WebSearchTool()); _register(CalculatorTool()); _register(DatetimeTool());
-    _register(FileReadTool()); _register(FileWriteTool()); _register(BashTool());
-    _register(FetchUrlTool()); _register(NoteCreateTool()); _register(NoteSearchTool());
-    _register(SummaryTool()); _register(MemoryTool());
+    _register(WebSearchTool());
+    _register(CalculatorTool());
+    _register(DatetimeTool());
+    _register(FileReadTool());
+    _register(FileWriteTool());
+    _register(BashTool());
+    _register(FetchUrlTool());
+    _register(NoteCreateTool());
+    _register(NoteSearchTool());
+    _register(SummaryTool());
+    _register(MemoryTool());
+  }
+
+  Future<void> _loadFromPresetDao() async {
+    try {
+      await _presetDao.getAll();
+    } catch (_) {}
   }
 
   void _register(Tool tool) => _tools[tool.name] = tool;
+
   Tool? operator [](String name) => _tools[name];
-  List<Tool> get enabledTools => _tools.values.where((t) => !_disabledTools.contains(t.name)).toList();
+
+  List<Tool> get enabledTools =>
+      _tools.values.where((t) => !_disabledTools.contains(t.name)).toList();
+
   List<String> get toolNames => _tools.keys.toList();
 
-  List<Map<String, dynamic>> getToolSchemas() => enabledTools.map((tool) => {
-    'name': tool.name, 'description': tool.description, 'parameters': tool.parametersJsonSchema,
-  }).toList();
+  List<Map<String, dynamic>> getToolSchemas() => enabledTools
+      .map((tool) => {
+            'name': tool.name,
+            'description': tool.description,
+            'parameters': tool.parametersJsonSchema,
+          })
+      .toList();
 
   String getToolSchemasXml() {
     final buffer = StringBuffer('<available_tools>\n');
-    for (final tool in enabledTools) { buffer.write(tool.schemaXml); }
+    for (final tool in enabledTools) {
+      buffer.write(tool.schemaXml);
+    }
     buffer.writeln('</available_tools>');
     return buffer.toString();
   }
 
-  void disable(String name) { _disabledTools.add(name); HumanNodeLogger.info('Disabled: $name'); }
-  void enable(String name) { _disabledTools.remove(name); HumanNodeLogger.info('Enabled: $name'); }
+  void disable(String name) {
+    _disabledTools.add(name);
+    HumanNodeLogger.info('Disabled: $name');
+  }
+
+  void enable(String name) {
+    _disabledTools.remove(name);
+    HumanNodeLogger.info('Enabled: $name');
+  }
+
   bool isDisabled(String name) => _disabledTools.contains(name);
   bool isEnabled(String name) => !_disabledTools.contains(name);
   bool canCall(String name) => (_callCounts[name] ?? 0) < _maxCallsPerTool;
@@ -62,7 +95,9 @@ class ToolRegistry {
     if (tool == null) return ToolFailure('Unknown tool', detail: name);
     if (_disabledTools.contains(name)) return const ToolFailure('Tool disabled');
     if (!canCall(name)) return ToolFailure('Call limit reached', detail: name);
-    if (!tool.validateArgs(args)) return ToolFailure('Invalid args', detail: jsonEncode(tool.parametersJsonSchema));
+    if (!tool.validateArgs(args)) {
+      return ToolFailure('Invalid args', detail: jsonEncode(tool.parametersJsonSchema));
+    }
     _callCounts[name] = (_callCounts[name] ?? 0) + 1;
     try {
       final result = await tool.execute(args);

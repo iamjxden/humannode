@@ -10,7 +10,11 @@ class ModelLoadResult {
   final int handle;
   final Duration loadTime;
 
-  const ModelLoadResult({required this.info, required this.handle, required this.loadTime});
+  const ModelLoadResult({
+    required this.info,
+    required this.handle,
+    required this.loadTime,
+  });
 }
 
 class ModelLoader {
@@ -21,7 +25,8 @@ class ModelLoader {
 
   ModelLoader({required this.llamaBridge, required this.fileCache});
 
-  Future<ModelLoadResult> load(String modelPath, {LlamaModelParams? params}) async {
+  Future<ModelLoadResult> load(String modelPath,
+      {LlamaModelParams? params}) async {
     final file = File(modelPath);
     if (!await file.exists()) {
       throw ModelException('Model file not found: $modelPath');
@@ -29,8 +34,8 @@ class ModelLoader {
 
     final stat = await file.stat();
     final stopwatch = Stopwatch()..start();
-
     final mp = params ?? const LlamaModelParams();
+
     String name;
     try {
       name = modelPath.split('/').last.replaceAll('.gguf', '');
@@ -39,7 +44,6 @@ class ModelLoader {
     }
 
     final handle = llamaBridge.loadModel(modelPath, mp);
-    final contextHandle = llamaBridge.createContext(handle, const LlamaContextParams());
     stopwatch.stop();
 
     final info = LlamaModelInfo(
@@ -54,27 +58,22 @@ class ModelLoader {
     _loadedModels[modelPath] = handle;
     _modelInfos[modelPath] = info;
 
-    HumanNodeLogger.info('Model loaded: $name (${stat.size} bytes) in ${stopwatch.elapsed.inMilliseconds}ms');
+    HumanNodeLogger.info(
+        'Model loaded: $name (${stat.size} bytes) in ${stopwatch.elapsed.inMilliseconds}ms');
     return ModelLoadResult(info: info, handle: handle, loadTime: stopwatch.elapsed);
   }
 
   bool isLoaded(String modelPath) => _loadedModels.containsKey(modelPath);
-
   int? getHandle(String modelPath) => _loadedModels[modelPath];
-
   LlamaModelInfo? getInfo(String modelPath) => _modelInfos[modelPath];
-
   List<String> get loadedPaths => _loadedModels.keys.toList();
-
-  List<LlamaModelInfo> get loadedInfos => _modelInfos.values.where((i) => i.isLoaded).toList();
-
+  List<LlamaModelInfo> get loadedInfos =>
+      _modelInfos.values.where((i) => i.isLoaded).toList();
   int get loadedCount => _loadedModels.length;
 
   void unload(String modelPath) {
     final handle = _loadedModels.remove(modelPath);
-    if (handle != null) {
-      llamaBridge.unloadModel(handle);
-    }
+    if (handle != null) llamaBridge.unloadModel(handle);
     _modelInfos.remove(modelPath);
     HumanNodeLogger.info('Model unloaded: ${modelPath.split('/').last}');
   }

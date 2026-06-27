@@ -1,15 +1,36 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 class SecureStore {
-  final Map<String, String> _data = {};
+  static const _storage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+  );
 
-  SecureStore();
+  Future<void> saveApiKey(String provider, String key) =>
+      _storage.write(key: 'api_key_$provider', value: key);
 
-  Future<void> saveApiKey(String provider, String key) async => _data['api_key_$provider'] = key;
-  Future<String?> getApiKey(String provider) async => _data['api_key_$provider'];
-  Future<void> deleteApiKey(String provider) async => _data.remove('api_key_$provider');
-  Future<bool> hasApiKey(String provider) async => _data.containsKey('api_key_$provider') && (_data['api_key_$provider']?.isNotEmpty == true);
-  Future<List<String>> getConfiguredProviders() async => ['openai', 'anthropic', 'openrouter'].where((p) => _data.containsKey('api_key_$p')).toList();
-  Future<void> write(String key, String value) async => _data[key] = value;
-  Future<String?> read(String key) async => _data[key];
-  Future<void> delete(String key) async => _data.remove(key);
-  Future<void> clearAll() async => _data.clear();
+  Future<String?> getApiKey(String provider) =>
+      _storage.read(key: 'api_key_$provider');
+
+  Future<void> deleteApiKey(String provider) =>
+      _storage.delete(key: 'api_key_$provider');
+
+  Future<bool> hasApiKey(String provider) async {
+    final key = await _storage.read(key: 'api_key_$provider');
+    return key != null && key.isNotEmpty;
+  }
+
+  Future<List<String>> getConfiguredProviders() async {
+    final providers = ['openai', 'anthropic', 'openrouter'];
+    final configured = <String>[];
+    for (final p in providers) {
+      if (await hasApiKey(p)) configured.add(p);
+    }
+    return configured;
+  }
+
+  Future<void> write(String key, String value) => _storage.write(key: key, value: value);
+  Future<String?> read(String key) => _storage.read(key: key);
+  Future<void> delete(String key) => _storage.delete(key: key);
+  Future<void> clearAll() => _storage.deleteAll();
 }
