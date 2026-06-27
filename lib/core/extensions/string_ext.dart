@@ -9,7 +9,8 @@ extension StringExt on String {
       minIndent = minIndent == null ? indent : (indent < minIndent ? indent : minIndent);
     }
     if (minIndent == null || minIndent == 0) return this;
-    return lines.map((l) => l.length >= minIndent! ? l.substring(minIndent!) : l).join('\n');
+    final m = minIndent;
+    return lines.map((l) => l.length >= m ? l.substring(m) : l).join('\n');
   }
 
   int get tokenCountApprox => (length / 3.5).ceil();
@@ -32,5 +33,6 @@ extension StringExt on String {
     return uri != null && uri.hasScheme && uri.hasAuthority;
   }
 
-  String get capitalize => isEmpty ? this : '${this[0].toUpperCase()}${substring(1)}';
+  String get capitalize =>
+      isEmpty ? this : '${this[0].toUpperCase()}${substring(1)}';
 }

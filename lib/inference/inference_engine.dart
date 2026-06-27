@@ -23,10 +23,13 @@ class GenerationResult {
   });
 
   double get tokensPerSecond =>
-      duration.inMilliseconds > 0 ? tokensGenerated / duration.inMilliseconds * 1000 : 0.0;
+      duration.inMilliseconds > 0
+          ? tokensGenerated / duration.inMilliseconds * 1000
+          : 0.0;
 
   String get summary =>
-      '${tokensGenerated} tokens in ${duration.inMilliseconds}ms (${tokensPerSecond.toStringAsFixed(1)} tok/s)';
+      '$tokensGenerated tokens in ${duration.inMilliseconds}ms '
+      '(${tokensPerSecond.toStringAsFixed(1)} tok/s)';
 }
 
 class InferenceEngine {
@@ -83,9 +86,7 @@ class InferenceEngine {
           if (controller.isClosed) break;
           controller.add(chunk);
         }
-        if (!controller.isClosed) {
-          await controller.close();
-        }
+        if (!controller.isClosed) await controller.close();
         HumanNodeLogger.info('Generation complete: $tokenCount tokens');
       } catch (e, st) {
         HumanNodeLogger.error('Generation failed', e, st);
@@ -142,18 +143,19 @@ class InferenceEngine {
     }
     final handle = modelLoader.getHandle(modelPath);
     if (handle == null) throw InferenceException('Model handle not found');
-    final ctx = llamaBridge.createContext(handle, const LlamaContextParams(embedding: true));
+    final ctx = llamaBridge.createContext(
+        handle, const LlamaContextParams(embedding: true));
     return llamaBridge.embed(ctx, text);
   }
 
   Future<List<double>> getLogits({String? modelPath}) async {
-    if (_currentContext == null) throw InferenceException('No active generation context');
+    if (_currentContext == null) {
+      throw InferenceException('No active generation context');
+    }
     return llamaBridge.getLogits(_currentContext!);
   }
 
-  void stop() {
-    _currentContext = null;
-  }
+  void stop() => _currentContext = null;
 
   bool get isGenerating => _currentContext != null;
   int? get currentContext => _currentContext;

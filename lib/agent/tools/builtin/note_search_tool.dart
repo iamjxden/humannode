@@ -1,4 +1,5 @@
 import '../tool.dart';
+import 'package:humannode/core/di/service_locator.dart';
 
 class NoteSearchTool extends Tool {
   @override
@@ -14,7 +15,10 @@ class NoteSearchTool extends Tool {
         'type': 'object',
         'properties': {
           'query': {'type': 'string', 'description': 'Search query.'},
-          'limit': {'type': 'integer', 'description': 'Maximum number of results (default: 5).'},
+          'limit': {
+            'type': 'integer',
+            'description': 'Maximum number of results (default: 5).'
+          },
         },
         'required': ['query'],
       };
@@ -22,8 +26,30 @@ class NoteSearchTool extends Tool {
   @override
   Future<String> execute(Map<String, dynamic> args) async {
     final query = args['query'] as String;
-    final limit = args['limit'] as int? ?? 5;
-    return 'Note search: "$query"\n'
-        'No matching notes found. Create notes first using note_create.';
+    final maxResults = args['limit'] as int? ?? 5;
+    final notes = await ServiceLocator.noteDao.getAll();
+    if (notes.isEmpty) {
+      return 'No notes found. Create notes first using note_create.';
+    }
+    final lower = query.toLowerCase();
+    final matches = notes.where((n) {
+      final title = (n['title'] as String? ?? '').toLowerCase();
+      final content = (n['content'] as String? ?? '').toLowerCase();
+      return title.contains(lower) || content.contains(lower);
+    }).take(maxResults).toList();
+
+    if (matches.isEmpty) {
+      return 'No notes matching "$query" found.';
+    }
+    final buffer = StringBuffer('Found ${matches.length} note(s) for "$query":\n\n');
+    for (final note in matches) {
+      buffer.writeln('Title: ${note['title']}');
+      final content = note['content'] as String? ?? '';
+      buffer.writeln(
+          'Preview: ${content.length > 150 ? '${content.substring(0, 150)}...' : content}');
+      buffer.writeln('Updated: ${note['updated_at']}');
+      buffer.writeln();
+    }
+    return buffer.toString();
   }
 }

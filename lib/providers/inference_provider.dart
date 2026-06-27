@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/di/service_locator.dart';
-import '../inference/model_loader.dart';
 
 class InferenceState {
   final bool isLoaded;

@@ -14,8 +14,7 @@ class HumanNodeTokenizer {
     if (_loadedModel == modelPath) return;
     _vocab.clear();
     _reverseVocab.clear();
-    final basePath = '${modelPath}.vocab';
-    final vocabFile = File(basePath);
+    final vocabFile = File('$modelPath.vocab');
     if (await vocabFile.exists()) {
       try {
         final lines = await vocabFile.readAsLines();
@@ -23,7 +22,8 @@ class HumanNodeTokenizer {
           _vocab[lines[i].trim()] = i;
           _reverseVocab[i] = lines[i].trim();
         }
-        HumanNodeLogger.info('Loaded vocab: ${lines.length} tokens from $modelPath');
+        HumanNodeLogger.info(
+            'Loaded vocab: ${lines.length} tokens from $modelPath');
       } catch (e) {
         HumanNodeLogger.warn('Failed to load vocab file, using character fallback');
       }
@@ -33,9 +33,7 @@ class HumanNodeTokenizer {
   }
 
   List<int> encode(String text) {
-    if (!_loaded || _vocab.isEmpty) {
-      return text.codeUnits;
-    }
+    if (!_loaded || _vocab.isEmpty) return text.codeUnits;
     final tokens = <int>[];
     for (var i = 0; i < text.length; i++) {
       final char = text[i];
@@ -46,14 +44,15 @@ class HumanNodeTokenizer {
 
   String decode(List<int> tokens) {
     if (!_loaded || _reverseVocab.isEmpty) {
-      return String.fromCharCodes(tokens.where((t) => t >= 0 && t <= 0x10FFFF));
+      return String.fromCharCodes(
+          tokens.where((t) => t >= 0 && t <= 0x10FFFF));
     }
-    return tokens.map((t) => _reverseVocab[t] ?? String.fromCharCode(t.clamp(0, 0x10FFFF))).join();
+    return tokens
+        .map((t) => _reverseVocab[t] ?? String.fromCharCode(t.clamp(0, 0x10FFFF)))
+        .join();
   }
 
-  int estimateTokenCount(String text) {
-    return (text.length / 3.5).ceil();
-  }
+  int estimateTokenCount(String text) => (text.length / 3.5).ceil();
 
   int estimateTokenCountAccurate(String text) {
     if (!_loaded || _vocab.isEmpty) return estimateTokenCount(text);
