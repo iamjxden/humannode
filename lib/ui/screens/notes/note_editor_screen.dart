@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 class NoteEditorScreen extends StatefulWidget {
+  final String noteId;
   final String title;
   final String content;
-  const NoteEditorScreen({super.key, required this.title, required this.content});
+  const NoteEditorScreen({super.key, required this.noteId, required this.title, required this.content});
   @override State<NoteEditorScreen> createState() => _NoteEditorScreenState();
 }
 
@@ -39,6 +40,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           actions: [
             TextButton(
               onPressed: _modified ? () => Navigator.pop(context, {
+                'noteId': widget.noteId,
                 'title': _titleCtrl.text,
                 'content': _contentCtrl.text,
               }) : null,
@@ -98,7 +100,11 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           ),
           FilledButton(onPressed: () {
             Navigator.pop(ctx);
-            Navigator.pop(context, {'title': _titleCtrl.text, 'content': _contentCtrl.text});
+            Navigator.pop(context, {
+              'noteId': widget.noteId,
+              'title': _titleCtrl.text,
+              'content': _contentCtrl.text,
+            });
           }, child: const Text('Save')),
         ],
       ),
