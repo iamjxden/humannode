@@ -4,6 +4,25 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:humannode/config/theme.dart';
 import 'package:humannode/models/message.dart';
 
+String _sanitize(String raw) {
+  // Strip XML-style system/agent tags the model leaks into output
+  final tags = [
+    'system', 'agent_mode', 'available_tools', 'session_memory',
+    'recent_messages', 'msg', 'tool_result', 'tool_call',
+  ];
+  var text = raw;
+  for (final tag in tags) {
+    text = text.replaceAll(RegExp('<$tag[^>]*>', caseSensitive: false), '');
+    text = text.replaceAll(RegExp('</$tag>', caseSensitive: false), '');
+  }
+  // Strip inline tool_call JSON blocks
+  text = text.replaceAll(
+      RegExp(r'<tool_call>\{.*?\}</tool_call>', dotAll: true, caseSensitive: false), '');
+  // Remove leftover blank lines (more than 2 in a row)
+  text = text.replaceAll(RegExp(r'\n{3,}'), '\n\n');
+  return text.trim();
+}
+
 class ChatMessageBubble extends StatelessWidget {
   final Message message;
   const ChatMessageBubble({super.key, required this.message});
@@ -76,6 +95,8 @@ class _AssistantBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final display = _sanitize(message.content);
+    if (display.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(right: 48, bottom: 16),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -121,7 +142,7 @@ class _AssistantBubble extends StatelessWidget {
                     color: HumanNodeTheme.border, width: 0.5),
               ),
               child: MarkdownBody(
-                data: message.content,
+                data: display,
                 selectable: true,
                 styleSheet: MarkdownStyleSheet(
                   p: const TextStyle(
