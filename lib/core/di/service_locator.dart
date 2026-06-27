@@ -40,34 +40,67 @@ class ServiceLocator {
   }
 
   static Future<void> _bootstrap() async {
-    secureStore = SecureStore();
-    fileCache = FileCache();
-    await fileCache.init();
     db = AppDatabase();
     conversationDao = db.conversationDao;
     messageDao = db.messageDao;
     noteDao = db.noteDao;
     presetDao = db.presetDao;
     settingsDao = db.settingsDao;
+
+    try {
+      secureStore = SecureStore();
+    } catch (e) {
+      HumanNodeLogger.warn('SecureStore init failed, using fallback: $e');
+      secureStore = SecureStore();
+    }
+
+    fileCache = FileCache();
+    try {
+      await fileCache.init();
+    } catch (e) {
+      HumanNodeLogger.warn('FileCache init failed: $e');
+    }
+
     llamaBridge = LlamaBridge();
-    await llamaBridge.load();
+    try {
+      await llamaBridge.load();
+    } catch (e) {
+      HumanNodeLogger.warn('LlamaBridge load failed (expected in mock mode): $e');
+    }
+
     tokenizer = HumanNodeTokenizer();
     modelLoader = ModelLoader(llamaBridge: llamaBridge, fileCache: fileCache);
     inferenceEngine = InferenceEngine(
-        llamaBridge: llamaBridge,
-        modelLoader: modelLoader,
-        tokenizer: tokenizer);
+      llamaBridge: llamaBridge,
+      modelLoader: modelLoader,
+      tokenizer: tokenizer,
+    );
+
     toolRegistry = ToolRegistry(presetDao: presetDao);
-    await toolRegistry.init();
+    try {
+      await toolRegistry.init();
+    } catch (e) {
+      HumanNodeLogger.warn('ToolRegistry init failed: $e');
+    }
+
     agentMemory = AgentMemory(messageDao: messageDao);
     agentPromptBuilder = AgentPromptBuilder(
-        toolRegistry: toolRegistry, agentMemory: agentMemory);
-    await agentPromptBuilder.loadDefaultPrompt();
+      toolRegistry: toolRegistry,
+      agentMemory: agentMemory,
+    );
+
+    try {
+      await agentPromptBuilder.loadDefaultPrompt();
+    } catch (e) {
+      HumanNodeLogger.warn('AgentPromptBuilder prompt load failed: $e');
+    }
+
     agentLoop = AgentLoop(
-        inferenceEngine: inferenceEngine,
-        toolRegistry: toolRegistry,
-        agentMemory: agentMemory,
-        agentPromptBuilder: agentPromptBuilder);
+      inferenceEngine: inferenceEngine,
+      toolRegistry: toolRegistry,
+      agentMemory: agentMemory,
+      agentPromptBuilder: agentPromptBuilder,
+    );
     agentController = AgentController(agentLoop: agentLoop);
   }
 

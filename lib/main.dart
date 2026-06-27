@@ -7,13 +7,21 @@ import 'core/logger/humannode_logger.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ]);
+
   HumanNodeLogger.init();
-  await ServiceLocator.init();
+
+  try {
+    await ServiceLocator.init();
+  } catch (e, st) {
+    HumanNodeLogger.error('ServiceLocator init failed', e, st);
+  }
+
   runApp(const ProviderScope(child: HumanNodeApp()));
 }
